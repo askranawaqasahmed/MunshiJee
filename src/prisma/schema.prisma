@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  CUSTOMER
+}
+
+enum InvoiceType {
+  ONE_TIME
+  RECURRING
+  BULK
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  ONLINE
+  OTHER
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String
+  password   String
+  role       Role     @default(CUSTOMER)
+  customerId String?  @unique
+  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([email])
+  @@index([customerId])
+}
+
+model Customer {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  phone           String
+  businessAddress String
+  contactAddress  String
+  isActive        Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user     User?
+  invoices Invoice[]
+  sales    Sale[]
+  payments Payment[]
+
+  @@index([email])
+  @@index([isActive])
+}
+
+model Invoice {
+  id                   String             @id @default(cuid())
+  invoiceNumber        String             @unique
+  customerId           String
+  customer             Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  type                 InvoiceType
+  amount               Decimal            @db.Decimal(10, 2)
+  status               InvoiceStatus      @default(DRAFT)
+  issueDate            DateTime           @default(now())
+  dueDate              DateTime
+  isRecurring          Boolean            @default(false)
+  recurringFrequency   RecurringFrequency?
+  nextBillingDate      DateTime?
+  notes                String?            @db.Text
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  items    InvoiceItem[]
+  payments Payment[]
+  sales    Sale[]
+
+  @@index([customerId])
+  @@index([invoiceNumber])
+  @@index([status])
+  @@index([nextBillingDate])
+}
+
+model InvoiceItem {
+  id          String  @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  description String
+  quantity    Int
+  unitPrice   Decimal @db.Decimal(10, 2)
+  total       Decimal @db.Decimal(10, 2)
+
+  @@index([invoiceId])
+}
+
+model Sale {
+  id          String   @id @default(cuid())
+  customerId  String
+  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  description String
+  amount      Decimal  @db.Decimal(10, 2)
+  saleDate    DateTime @default(now())
+  invoiced    Boolean  @default(false)
+  invoiceId   String?
+  invoice     Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+
+  @@index([customerId])
+  @@index([invoiced])
+  @@index([saleDate])
+}
+
+model Payment {
+  id          String        @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  customerId  String
+  customer    Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  amount      Decimal       @db.Decimal(10, 2)
+  paymentDate DateTime      @default(now())
+  method      PaymentMethod
+  reference   String?
+  notes       String?       @db.Text
+  createdAt   DateTime      @default(now())
+
+  @@index([invoiceId])
+  @@index([customerId])
+  @@index([paymentDate])
+}

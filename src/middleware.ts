@@ -37,7 +37,8 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith("/customers") ||
       pathname.startsWith("/invoices") ||
       pathname.startsWith("/sales") ||
-      pathname.startsWith("/payments")) {
+      pathname.startsWith("/payments") ||
+      pathname.startsWith("/settings")) {
     if (role !== "SUPER_ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }

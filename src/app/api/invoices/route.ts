@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { invoiceSchema } from "@/lib/validators";
 import { generateInvoiceNumber, calculateNextBillingDate } from "@/lib/invoice-utils";
+import { sendInvoiceNotification } from "@/lib/notification-service";
 import { Prisma } from "@prisma/client";
 
 export async function GET(request: NextRequest) {
@@ -130,6 +131,12 @@ export async function POST(request: NextRequest) {
         items: true,
       },
     });
+
+    if (invoice.status !== "DRAFT") {
+      sendInvoiceNotification(invoice.id).catch((error) => {
+        console.error("Failed to send invoice notification:", error);
+      });
+    }
 
     return NextResponse.json({ invoice });
   } catch (error: any) {

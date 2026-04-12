@@ -10,6 +10,7 @@ import {
   FileText,
   ShoppingCart,
   CreditCard,
+  Settings,
   LogOut,
   X,
 } from "lucide-react";
@@ -41,6 +42,11 @@ const menuItems = [
     title: "Payments",
     icon: CreditCard,
     href: "/payments",
+  },
+  {
+    title: "Settings",
+    icon: Settings,
+    href: "/settings",
   },
 ];
 

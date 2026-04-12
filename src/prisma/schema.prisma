@@ -41,6 +41,17 @@ enum PaymentMethod {
   OTHER
 }
 
+enum NotificationType {
+  EMAIL
+  SMS
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 model User {
   id         String   @id @default(cuid())
   email      String   @unique
@@ -96,6 +107,7 @@ model Invoice {
   items    InvoiceItem[]
   payments Payment[]
   sales    Sale[]
+  notifications NotificationLog[]
 
   @@index([customerId])
   @@index([invoiceNumber])
@@ -148,4 +160,31 @@ model Payment {
   @@index([invoiceId])
   @@index([customerId])
   @@index([paymentDate])
+}
+
+model Settings {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     Json
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model NotificationLog {
+  id           String             @id @default(cuid())
+  invoiceId    String
+  invoice      Invoice            @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  type         NotificationType
+  provider     String
+  recipient    String
+  status       NotificationStatus
+  errorMessage String?            @db.Text
+  sentAt       DateTime?
+  createdAt    DateTime           @default(now())
+
+  @@index([invoiceId])
+  @@index([status])
+  @@index([createdAt])
 }

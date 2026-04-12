@@ -2,6 +2,7 @@ import { Worker } from "bullmq";
 import { PrismaClient, Prisma } from "@prisma/client";
 import { connection } from "../lib/redis";
 import { generateInvoiceNumber, calculateNextBillingDate } from "../lib/invoice-utils";
+import { sendInvoiceNotification } from "../lib/notification-service";
 
 const prisma = new PrismaClient();
 
@@ -37,7 +38,7 @@ async function processRecurringInvoices() {
         invoice.recurringFrequency!
       );
 
-      await prisma.invoice.create({
+      const newInvoice = await prisma.invoice.create({
         data: {
           invoiceNumber,
           customerId: invoice.customerId,
@@ -64,6 +65,10 @@ async function processRecurringInvoices() {
       await prisma.invoice.update({
         where: { id: invoice.id },
         data: { nextBillingDate },
+      });
+
+      sendInvoiceNotification(newInvoice.id).catch((error) => {
+        console.error(`Failed to send notification for invoice ${invoiceNumber}:`, error);
       });
 
       console.log(

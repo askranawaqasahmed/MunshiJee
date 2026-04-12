@@ -74,7 +74,7 @@ export function AddCustomerSheet({ open, onOpenChange, onSuccess }: AddCustomerS
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="sm:max-w-xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Add New Customer</SheetTitle>
           <SheetDescription>
@@ -82,98 +82,100 @@ export function AddCustomerSheet({ open, onOpenChange, onSuccess }: AddCustomerS
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+        <div className="flex-1 overflow-y-auto py-6">
+          <form onSubmit={handleSubmit} className="space-y-6" id="add-customer-form">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="name">Name *</Label>
+              <Input
+                id="name"
+                value={formData.name}
+                onChange={(e) =>
+                  setFormData({ ...formData, name: e.target.value })
+                }
+                required
+                disabled={loading}
+                placeholder="Enter customer name"
+              />
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="name">Name *</Label>
-            <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              required
-              disabled={loading}
-              placeholder="Enter customer name"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
+                required
+                disabled={loading}
+                placeholder="customer@example.com"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="email">Email *</Label>
-            <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              required
-              disabled={loading}
-              placeholder="customer@example.com"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone *</Label>
+              <Input
+                id="phone"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
+                required
+                disabled={loading}
+                placeholder="+1 (555) 000-0000"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="phone">Phone *</Label>
-            <Input
-              id="phone"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              required
-              disabled={loading}
-              placeholder="+1 (555) 000-0000"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="businessAddress">Business Address *</Label>
+              <Input
+                id="businessAddress"
+                value={formData.businessAddress}
+                onChange={(e) =>
+                  setFormData({ ...formData, businessAddress: e.target.value })
+                }
+                required
+                disabled={loading}
+                placeholder="123 Business St, City, State"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="businessAddress">Business Address *</Label>
-            <Input
-              id="businessAddress"
-              value={formData.businessAddress}
-              onChange={(e) =>
-                setFormData({ ...formData, businessAddress: e.target.value })
-              }
-              required
-              disabled={loading}
-              placeholder="123 Business St, City, State"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="contactAddress">Contact Address *</Label>
+              <Input
+                id="contactAddress"
+                value={formData.contactAddress}
+                onChange={(e) =>
+                  setFormData({ ...formData, contactAddress: e.target.value })
+                }
+                required
+                disabled={loading}
+                placeholder="456 Contact Ave, City, State"
+              />
+            </div>
+          </form>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contactAddress">Contact Address *</Label>
-            <Input
-              id="contactAddress"
-              value={formData.contactAddress}
-              onChange={(e) =>
-                setFormData({ ...formData, contactAddress: e.target.value })
-              }
-              required
-              disabled={loading}
-              placeholder="456 Contact Ave, City, State"
-            />
-          </div>
-
-          <SheetFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Creating..." : "Create Customer"}
-            </Button>
-          </SheetFooter>
-        </form>
+        <SheetFooter className="border-t pt-4 mt-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="add-customer-form" disabled={loading}>
+            {loading ? "Creating..." : "Create Customer"}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

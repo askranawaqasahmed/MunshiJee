@@ -48,15 +48,15 @@ export async function CustomerDashboard() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
+        <p className="text-sm sm:text-base text-muted-foreground">
           Your account overview and recent invoices
         </p>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
         {stats.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -89,19 +89,19 @@ export async function CustomerDashboard() {
               {recentInvoices.map((invoice) => (
                 <div
                   key={invoice.id}
-                  className="flex justify-between items-center py-2 border-b last:border-0"
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-3 border-b last:border-0"
                 >
-                  <div>
-                    <p className="font-medium">{invoice.invoiceNumber}</p>
-                    <p className="text-sm text-muted-foreground">
+                  <div className="flex-1">
+                    <p className="font-medium text-sm sm:text-base">{invoice.invoiceNumber}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {new Date(invoice.issueDate).toLocaleDateString()} • {formatInvoiceType(invoice.type)}
                     </p>
                   </div>
-                  <div className="text-right">
-                    <p className="font-medium">
+                  <div className="flex justify-between sm:block sm:text-right">
+                    <p className="font-medium text-sm sm:text-base">
                       ${Number(invoice.amount).toFixed(2)}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs sm:text-sm text-muted-foreground">
                       {invoice.status}
                     </p>
                   </div>

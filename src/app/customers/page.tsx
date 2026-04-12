@@ -77,20 +77,21 @@ export default function CustomersPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Customers</h1>
-          <p className="text-muted-foreground">Manage your customer database</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Customers</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage your customer database</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Link href="/customers/upload">
-            <Button variant="outline">
+            <Button variant="outline" className="w-full sm:w-auto">
               <Upload className="mr-2 h-4 w-4" />
-              Bulk Upload
+              <span className="hidden sm:inline">Bulk Upload</span>
+              <span className="sm:hidden">Upload</span>
             </Button>
           </Link>
-          <Button onClick={() => setAddSheetOpen(true)}>
+          <Button onClick={() => setAddSheetOpen(true)} className="w-full sm:w-auto">
             <Plus className="mr-2 h-4 w-4" />
             Add Customer
           </Button>
@@ -101,31 +102,73 @@ export default function CustomersPage() {
         <CardHeader>
           <CardTitle>All Customers</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {customers.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground px-4">
               No customers found. Add your first customer to get started.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Email</TableHead>
+                      <TableHead>Phone</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {customers.map((customer: any) => (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium">
+                          {customer.name}
+                        </TableCell>
+                        <TableCell>{customer.email}</TableCell>
+                        <TableCell>{customer.phone}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                              customer.isActive
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {customer.isActive ? "Active" : "Inactive"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEdit(customer.id)}
+                          >
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4 p-4">
                 {customers.map((customer: any) => (
-                  <TableRow key={customer.id}>
-                    <TableCell className="font-medium">
-                      {customer.name}
-                    </TableCell>
-                    <TableCell>{customer.email}</TableCell>
-                    <TableCell>{customer.phone}</TableCell>
-                    <TableCell>
+                  <div
+                    key={customer.id}
+                    className="border rounded-lg p-4 space-y-3 bg-white"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base">{customer.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{customer.email}</p>
+                        <p className="text-sm text-muted-foreground">{customer.phone}</p>
+                      </div>
                       <span
                         className={`inline-flex px-2 py-1 text-xs rounded-full ${
                           customer.isActive
@@ -135,21 +178,20 @@ export default function CustomersPage() {
                       >
                         {customer.isActive ? "Active" : "Inactive"}
                       </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(customer.id)}
-                      >
-                        <Edit className="mr-2 h-4 w-4" />
-                        Edit
-                      </Button>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => handleEdit(customer.id)}
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit Customer
+                    </Button>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

@@ -25,30 +25,32 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
   if (totalPages <= 1) return null;
 
   return (
-    <div className="flex items-center justify-between px-4 py-3 border-t">
-      <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 border-t">
+      <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center">
         <Button
           variant="outline"
           size="sm"
           onClick={() => onPageChange(currentPage - 1)}
           disabled={currentPage === 1}
+          className="text-xs sm:text-sm"
         >
-          <ChevronLeft className="h-4 w-4 mr-1" />
-          Previous
+          <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4 sm:mr-1" />
+          <span className="hidden sm:inline">Previous</span>
         </Button>
 
-        <div className="flex gap-1">
+        <div className="flex gap-1 flex-wrap justify-center">
           {startPage > 1 && (
             <>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => onPageChange(1)}
+                className="text-xs sm:text-sm min-w-[32px] sm:min-w-[36px]"
               >
                 1
               </Button>
               {startPage > 2 && (
-                <span className="px-2 py-1 text-sm text-muted-foreground">
+                <span className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">
                   ...
                 </span>
               )}
@@ -61,6 +63,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
               variant={currentPage === page ? "default" : "outline"}
               size="sm"
               onClick={() => onPageChange(page)}
+              className="text-xs sm:text-sm min-w-[32px] sm:min-w-[36px]"
             >
               {page}
             </Button>
@@ -69,7 +72,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           {endPage < totalPages && (
             <>
               {endPage < totalPages - 1 && (
-                <span className="px-2 py-1 text-sm text-muted-foreground">
+                <span className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">
                   ...
                 </span>
               )}
@@ -77,6 +80,7 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
                 variant="outline"
                 size="sm"
                 onClick={() => onPageChange(totalPages)}
+                className="text-xs sm:text-sm min-w-[32px] sm:min-w-[36px]"
               >
                 {totalPages}
               </Button>
@@ -89,13 +93,14 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
           size="sm"
           onClick={() => onPageChange(currentPage + 1)}
           disabled={currentPage === totalPages}
+          className="text-xs sm:text-sm"
         >
-          Next
-          <ChevronRight className="h-4 w-4 ml-1" />
+          <span className="hidden sm:inline">Next</span>
+          <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4 sm:ml-1" />
         </Button>
       </div>
 
-      <div className="text-sm text-muted-foreground">
+      <div className="text-xs sm:text-sm text-muted-foreground">
         Page {currentPage} of {totalPages}
       </div>
     </div>

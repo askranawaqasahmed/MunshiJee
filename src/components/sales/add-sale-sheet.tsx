@@ -75,7 +75,7 @@ export function AddSaleSheet({ open, onOpenChange, onSuccess }: AddSaleSheetProp
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="sm:max-w-xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Add Sale Entry</SheetTitle>
           <SheetDescription>
@@ -83,72 +83,74 @@ export function AddSaleSheet({ open, onOpenChange, onSuccess }: AddSaleSheetProp
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+        <div className="flex-1 overflow-y-auto py-6">
+          <form onSubmit={handleSubmit} className="space-y-6" id="add-sale-form">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <CustomerSelector
+              value={customerId}
+              onChange={setCustomerId}
+              disabled={loading}
+            />
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="e.g., Product sale, Service fee"
+              />
             </div>
-          )}
 
-          <CustomerSelector
-            value={customerId}
-            onChange={setCustomerId}
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount *</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="saleDate">Sale Date *</Label>
+              <Input
+                id="saleDate"
+                type="date"
+                value={saleDate}
+                onChange={(e) => setSaleDate(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+          </form>
+        </div>
+
+        <SheetFooter className="border-t pt-4 mt-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
             disabled={loading}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="e.g., Product sale, Service fee"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount *</Label>
-            <Input
-              id="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="0.00"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="saleDate">Sale Date *</Label>
-            <Input
-              id="saleDate"
-              type="date"
-              value={saleDate}
-              onChange={(e) => setSaleDate(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <SheetFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !customerId}>
-              {loading ? "Creating..." : "Add Sale"}
-            </Button>
-          </SheetFooter>
-        </form>
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="add-sale-form" disabled={loading || !customerId}>
+            {loading ? "Creating..." : "Add Sale"}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

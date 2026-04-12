@@ -76,13 +76,13 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Sales</h1>
-          <p className="text-muted-foreground">Manage sales entries for bulk invoicing</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Sales</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage sales entries for bulk invoicing</p>
         </div>
-        <Button onClick={() => setAddSheetOpen(true)}>
+        <Button onClick={() => setAddSheetOpen(true)} className="w-full sm:w-auto">
           <Plus className="mr-2 h-4 w-4" />
           Add Sale
         </Button>
@@ -92,35 +92,78 @@ export default function SalesPage() {
         <CardHeader>
           <CardTitle>All Sales</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {sales.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground px-4">
               No sales found. Add sales entries to generate bulk invoices.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Sale Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Invoice</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Sale Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Invoice</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {sales.map((sale: any) => (
+                      <TableRow key={sale.id}>
+                        <TableCell className="font-medium">
+                          {sale.customer.name}
+                        </TableCell>
+                        <TableCell>{sale.description}</TableCell>
+                        <TableCell>{formatCurrency(Number(sale.amount))}</TableCell>
+                        <TableCell>{formatDate(sale.saleDate)}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                              sale.invoiced
+                                ? "bg-green-100 text-green-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {sale.invoiced ? "Invoiced" : "Pending"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          {sale.invoice ? (
+                            <Link
+                              href={`/invoices/${sale.invoice.id}`}
+                              className="text-primary hover:underline"
+                            >
+                              {sale.invoice.invoiceNumber}
+                            </Link>
+                          ) : (
+                            <span className="text-muted-foreground">-</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4 p-4">
                 {sales.map((sale: any) => (
-                  <TableRow key={sale.id}>
-                    <TableCell className="font-medium">
-                      {sale.customer.name}
-                    </TableCell>
-                    <TableCell>{sale.description}</TableCell>
-                    <TableCell>{formatCurrency(Number(sale.amount))}</TableCell>
-                    <TableCell>{formatDate(sale.saleDate)}</TableCell>
-                    <TableCell>
+                  <div
+                    key={sale.id}
+                    className="border rounded-lg p-4 space-y-3 bg-white"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <h3 className="font-semibold text-base">{sale.customer.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{sale.description}</p>
+                      </div>
                       <span
-                        className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                        className={`inline-flex px-2 py-1 text-xs rounded-full whitespace-nowrap ${
                           sale.invoiced
                             ? "bg-green-100 text-green-800"
                             : "bg-yellow-100 text-yellow-800"
@@ -128,23 +171,30 @@ export default function SalesPage() {
                       >
                         {sale.invoiced ? "Invoiced" : "Pending"}
                       </span>
-                    </TableCell>
-                    <TableCell>
-                      {sale.invoice ? (
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Amount:</span>
+                      <span className="font-semibold">{formatCurrency(Number(sale.amount))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Sale Date:</span>
+                      <span>{formatDate(sale.saleDate)}</span>
+                    </div>
+                    {sale.invoice && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Invoice:</span>
                         <Link
                           href={`/invoices/${sale.invoice.id}`}
                           className="text-primary hover:underline"
                         >
                           {sale.invoice.invoiceNumber}
                         </Link>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                  </TableRow>
+                      </div>
+                    )}
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
         {!loading && sales.length > 0 && (

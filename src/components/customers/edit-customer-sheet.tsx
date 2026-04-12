@@ -111,7 +111,7 @@ export function EditCustomerSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="sm:max-w-xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Edit Customer</SheetTitle>
           <SheetDescription>
@@ -124,80 +124,84 @@ export function EditCustomerSheet({
             <div className="text-muted-foreground">Loading customer...</div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} className="space-y-6 py-6">
-            {error && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-                {error}
-              </div>
-            )}
+          <>
+            <div className="flex-1 overflow-y-auto py-6">
+              <form onSubmit={handleSubmit} className="space-y-6" id="edit-customer-form">
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                    {error}
+                  </div>
+                )}
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-name">Name *</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-                required
-                disabled={saving}
-              />
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Name *</Label>
+                  <Input
+                    id="edit-name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-email">Email *</Label>
+                  <Input
+                    id="edit-email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-phone">Phone *</Label>
+                  <Input
+                    id="edit-phone"
+                    value={formData.phone}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone: e.target.value })
+                    }
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-businessAddress">Business Address *</Label>
+                  <Input
+                    id="edit-businessAddress"
+                    value={formData.businessAddress}
+                    onChange={(e) =>
+                      setFormData({ ...formData, businessAddress: e.target.value })
+                    }
+                    required
+                    disabled={saving}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-contactAddress">Contact Address *</Label>
+                  <Input
+                    id="edit-contactAddress"
+                    value={formData.contactAddress}
+                    onChange={(e) =>
+                      setFormData({ ...formData, contactAddress: e.target.value })
+                    }
+                    required
+                    disabled={saving}
+                  />
+                </div>
+              </form>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="edit-email">Email *</Label>
-              <Input
-                id="edit-email"
-                type="email"
-                value={formData.email}
-                onChange={(e) =>
-                  setFormData({ ...formData, email: e.target.value })
-                }
-                required
-                disabled={saving}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-phone">Phone *</Label>
-              <Input
-                id="edit-phone"
-                value={formData.phone}
-                onChange={(e) =>
-                  setFormData({ ...formData, phone: e.target.value })
-                }
-                required
-                disabled={saving}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-businessAddress">Business Address *</Label>
-              <Input
-                id="edit-businessAddress"
-                value={formData.businessAddress}
-                onChange={(e) =>
-                  setFormData({ ...formData, businessAddress: e.target.value })
-                }
-                required
-                disabled={saving}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="edit-contactAddress">Contact Address *</Label>
-              <Input
-                id="edit-contactAddress"
-                value={formData.contactAddress}
-                onChange={(e) =>
-                  setFormData({ ...formData, contactAddress: e.target.value })
-                }
-                required
-                disabled={saving}
-              />
-            </div>
-
-            <SheetFooter className="pt-4">
+            <SheetFooter className="border-t pt-4 mt-auto">
               <Button
                 type="button"
                 variant="outline"
@@ -206,11 +210,11 @@ export function EditCustomerSheet({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={saving}>
+              <Button type="submit" form="edit-customer-form" disabled={saving}>
                 {saving ? "Saving..." : "Save Changes"}
               </Button>
             </SheetFooter>
-          </form>
+          </>
         )}
       </SheetContent>
     </Sheet>

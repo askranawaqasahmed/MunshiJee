@@ -105,7 +105,7 @@ export function AddRecurringInvoiceSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="sm:max-w-xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Create Recurring Invoice</SheetTitle>
           <SheetDescription>
@@ -113,114 +113,116 @@ export function AddRecurringInvoiceSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+        <div className="flex-1 overflow-y-auto py-6">
+          <form onSubmit={handleSubmit} className="space-y-6" id="recurring-invoice-form">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <CustomerSelector
+              value={customerId}
+              onChange={setCustomerId}
+              disabled={loading}
+            />
+
+            <div className="space-y-2">
+              <Label htmlFor="description">Description *</Label>
+              <Input
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="e.g., Monthly Subscription"
+              />
             </div>
-          )}
 
-          <CustomerSelector
-            value={customerId}
-            onChange={setCustomerId}
+            <div className="space-y-2">
+              <Label htmlFor="amount">Amount *</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="0.00"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="billingDate">Billing Date *</Label>
+              <Input
+                id="billingDate"
+                type="date"
+                value={billingDate}
+                onChange={(e) => setBillingDate(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="frequency">Billing Frequency *</Label>
+              <Select
+                value={frequency}
+                onValueChange={setFrequency}
+                disabled={loading}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="WEEKLY">Weekly</SelectItem>
+                  <SelectItem value="MONTHLY">Monthly</SelectItem>
+                  <SelectItem value="QUARTERLY">Quarterly</SelectItem>
+                  <SelectItem value="YEARLY">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="dueDate">First Due Date *</Label>
+              <Input
+                id="dueDate"
+                type="date"
+                value={dueDate}
+                onChange={(e) => setDueDate(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={loading}
+                placeholder="Optional notes"
+              />
+            </div>
+          </form>
+        </div>
+
+        <SheetFooter className="border-t pt-4 mt-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
             disabled={loading}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description *</Label>
-            <Input
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="e.g., Monthly Subscription"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="amount">Amount *</Label>
-            <Input
-              id="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="0.00"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="billingDate">Billing Date *</Label>
-            <Input
-              id="billingDate"
-              type="date"
-              value={billingDate}
-              onChange={(e) => setBillingDate(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="frequency">Billing Frequency *</Label>
-            <Select
-              value={frequency}
-              onValueChange={setFrequency}
-              disabled={loading}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="WEEKLY">Weekly</SelectItem>
-                <SelectItem value="MONTHLY">Monthly</SelectItem>
-                <SelectItem value="QUARTERLY">Quarterly</SelectItem>
-                <SelectItem value="YEARLY">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="dueDate">First Due Date *</Label>
-            <Input
-              id="dueDate"
-              type="date"
-              value={dueDate}
-              onChange={(e) => setDueDate(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Input
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={loading}
-              placeholder="Optional notes"
-            />
-          </div>
-
-          <SheetFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !customerId}>
-              {loading ? "Creating..." : "Create Recurring Invoice"}
-            </Button>
-          </SheetFooter>
-        </form>
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="recurring-invoice-form" disabled={loading || !customerId}>
+            {loading ? "Creating..." : "Create Recurring Invoice"}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

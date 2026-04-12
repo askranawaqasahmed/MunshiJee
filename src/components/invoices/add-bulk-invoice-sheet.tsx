@@ -134,7 +134,7 @@ export function AddBulkInvoiceSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="sm:max-w-xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Create Bulk Invoice</SheetTitle>
           <SheetDescription>
@@ -142,92 +142,95 @@ export function AddBulkInvoiceSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
-            </div>
-          )}
+        <div className="flex-1 overflow-y-auto py-6">
+          <form onSubmit={handleSubmit} className="space-y-6" id="bulk-invoice-form">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
 
-          <CustomerSelector
-            value={customerId}
-            onChange={setCustomerId}
-            disabled={loading}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="billingDate">Billing Date *</Label>
-            <Input
-              id="billingDate"
-              type="date"
-              value={billingDate}
-              onChange={(e) => setBillingDate(e.target.value)}
-              required
+            <CustomerSelector
+              value={customerId}
+              onChange={setCustomerId}
               disabled={loading}
             />
-          </div>
 
-          {customerId && (
-            <div className="space-y-4 border-t pt-4">
-              <Label>Un-invoiced Sales</Label>
-              {loadingSales ? (
-                <div className="text-sm text-muted-foreground">
-                  Loading sales...
-                </div>
-              ) : sales.length === 0 ? (
-                <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded-md">
-                  No un-invoiced sales found for this customer.
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {sales.map((sale) => (
-                    <div
-                      key={sale.id}
-                      className="flex justify-between items-center p-3 bg-gray-50 rounded"
-                    >
-                      <div>
-                        <div className="font-medium">{sale.description}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {new Date(sale.saleDate).toLocaleDateString()}
+            <div className="space-y-2">
+              <Label htmlFor="billingDate">Billing Date *</Label>
+              <Input
+                id="billingDate"
+                type="date"
+                value={billingDate}
+                onChange={(e) => setBillingDate(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
+
+            {customerId && (
+              <div className="space-y-4 border-t pt-4">
+                <Label>Un-invoiced Sales</Label>
+                {loadingSales ? (
+                  <div className="text-sm text-muted-foreground">
+                    Loading sales...
+                  </div>
+                ) : sales.length === 0 ? (
+                  <div className="text-sm text-muted-foreground bg-yellow-50 p-3 rounded-md">
+                    No un-invoiced sales found for this customer.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {sales.map((sale) => (
+                      <div
+                        key={sale.id}
+                        className="flex justify-between items-center p-3 bg-gray-50 rounded"
+                      >
+                        <div>
+                          <div className="font-medium">{sale.description}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {new Date(sale.saleDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="font-semibold">
+                          ${Number(sale.amount).toFixed(2)}
                         </div>
                       </div>
-                      <div className="font-semibold">
-                        ${Number(sale.amount).toFixed(2)}
-                      </div>
-                    </div>
-                  ))}
-                  <div className="flex justify-end pt-2 border-t">
-                    <div className="text-right">
-                      <div className="text-sm text-muted-foreground">
-                        Total Amount
-                      </div>
-                      <div className="text-2xl font-bold">
-                        ${totalAmount.toFixed(2)}
+                    ))}
+                    <div className="flex justify-end pt-2 border-t">
+                      <div className="text-right">
+                        <div className="text-sm text-muted-foreground">
+                          Total Amount
+                        </div>
+                        <div className="text-2xl font-bold">
+                          ${totalAmount.toFixed(2)}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </form>
+        </div>
 
-          <SheetFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading || !customerId || sales.length === 0}
-            >
-              {loading ? "Creating..." : "Generate Bulk Invoice"}
-            </Button>
-          </SheetFooter>
-        </form>
+        <SheetFooter className="border-t pt-4 mt-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="bulk-invoice-form"
+            disabled={loading || !customerId || sales.length === 0}
+          >
+            {loading ? "Creating..." : "Generate Bulk Invoice"}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

@@ -112,7 +112,7 @@ export function MarkPaidSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-xl overflow-y-auto">
+      <SheetContent className="sm:max-w-xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Mark Invoice as Paid</SheetTitle>
           <SheetDescription>
@@ -120,95 +120,97 @@ export function MarkPaidSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
-          {error && (
-            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
-              {error}
+        <div className="flex-1 overflow-y-auto py-6">
+          <form onSubmit={handleSubmit} className="space-y-6" id="mark-paid-form">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label htmlFor="amount">Payment Amount *</Label>
+              <Input
+                id="amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                required
+                disabled={loading}
+                placeholder="0.00"
+              />
+              <p className="text-sm text-muted-foreground">
+                Invoice Amount: ${invoiceAmount.toFixed(2)}
+              </p>
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="amount">Payment Amount *</Label>
-            <Input
-              id="amount"
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-              required
-              disabled={loading}
-              placeholder="0.00"
-            />
-            <p className="text-sm text-muted-foreground">
-              Invoice Amount: ${invoiceAmount.toFixed(2)}
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="paymentDate">Payment Date *</Label>
+              <Input
+                id="paymentDate"
+                type="date"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
+                required
+                disabled={loading}
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="paymentDate">Payment Date *</Label>
-            <Input
-              id="paymentDate"
-              type="date"
-              value={paymentDate}
-              onChange={(e) => setPaymentDate(e.target.value)}
-              required
-              disabled={loading}
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="method">Payment Method *</Label>
+              <Select value={method} onValueChange={setMethod} disabled={loading}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CASH">Cash</SelectItem>
+                  <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
+                  <SelectItem value="CHEQUE">Cheque</SelectItem>
+                  <SelectItem value="ONLINE">Online Payment</SelectItem>
+                  <SelectItem value="OTHER">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="method">Payment Method *</Label>
-            <Select value={method} onValueChange={setMethod} disabled={loading}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="CASH">Cash</SelectItem>
-                <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
-                <SelectItem value="CHEQUE">Cheque</SelectItem>
-                <SelectItem value="ONLINE">Online Payment</SelectItem>
-                <SelectItem value="OTHER">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="reference">Reference Number</Label>
+              <Input
+                id="reference"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                disabled={loading}
+                placeholder="Transaction ID, Check number, etc."
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="reference">Reference Number</Label>
-            <Input
-              id="reference"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              disabled={loading}
-              placeholder="Transaction ID, Check number, etc."
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="notes">Notes</Label>
+              <Input
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={loading}
+                placeholder="Additional payment notes"
+              />
+            </div>
+          </form>
+        </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notes">Notes</Label>
-            <Input
-              id="notes"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={loading}
-              placeholder="Additional payment notes"
-            />
-          </div>
-
-          <SheetFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? "Recording Payment..." : "Mark as Paid"}
-            </Button>
-          </SheetFooter>
-        </form>
+        <SheetFooter className="border-t pt-4 mt-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="mark-paid-form" disabled={loading}>
+            {loading ? "Recording Payment..." : "Mark as Paid"}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

@@ -123,7 +123,7 @@ export function AddOneTimeInvoiceSheet({
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-2xl overflow-y-auto">
+      <SheetContent className="sm:max-w-2xl flex flex-col h-full">
         <SheetHeader>
           <SheetTitle>Create One-Time Invoice</SheetTitle>
           <SheetDescription>
@@ -131,7 +131,8 @@ export function AddOneTimeInvoiceSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-6">
+        <div className="flex-1 overflow-y-auto py-6">
+          <form onSubmit={handleSubmit} className="space-y-6" id="onetime-invoice-form">
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
               {error}
@@ -199,11 +200,8 @@ export function AddOneTimeInvoiceSheet({
                 key={index}
                 className="border rounded-lg p-4 space-y-3 bg-gray-50"
               >
-                <div className="flex justify-between items-start">
-                  <Label className="text-sm font-semibold">
-                    Item {index + 1}
-                  </Label>
-                  {items.length > 1 && (
+                {items.length > 1 && (
+                  <div className="flex justify-end">
                     <Button
                       type="button"
                       variant="ghost"
@@ -213,8 +211,8 @@ export function AddOneTimeInvoiceSheet({
                     >
                       <Trash className="h-4 w-4" />
                     </Button>
-                  )}
-                </div>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label htmlFor={`description-${index}`}>Description *</Label>
@@ -285,21 +283,22 @@ export function AddOneTimeInvoiceSheet({
               </div>
             </div>
           </div>
+          </form>
+        </div>
 
-          <SheetFooter className="pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading || !customerId}>
-              {loading ? "Creating..." : "Create Invoice"}
-            </Button>
-          </SheetFooter>
-        </form>
+        <SheetFooter className="border-t pt-4 mt-auto">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={loading}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" form="onetime-invoice-form" disabled={loading || !customerId}>
+            {loading ? "Creating..." : "Create Invoice"}
+          </Button>
+        </SheetFooter>
       </SheetContent>
     </Sheet>
   );

@@ -133,21 +133,23 @@ export default function InvoicesPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold">Invoices</h1>
-          <p className="text-muted-foreground">Manage all invoices</p>
+          <h1 className="text-2xl sm:text-3xl font-bold">Invoices</h1>
+          <p className="text-sm sm:text-base text-muted-foreground">Manage all invoices</p>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setOneTimeSheetOpen(true)}>
-            One-Time Invoice
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" onClick={() => setOneTimeSheetOpen(true)} className="w-full sm:w-auto text-xs sm:text-sm">
+            <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            One-Time
           </Button>
-          <Button variant="outline" onClick={() => setRecurringSheetOpen(true)}>
-            Recurring Invoice
+          <Button variant="outline" onClick={() => setRecurringSheetOpen(true)} className="w-full sm:w-auto text-xs sm:text-sm">
+            <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            Recurring
           </Button>
-          <Button onClick={() => setBulkSheetOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
+          <Button onClick={() => setBulkSheetOpen(true)} className="w-full sm:w-auto text-xs sm:text-sm">
+            <Plus className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
             Bulk Invoice
           </Button>
         </div>
@@ -206,38 +208,79 @@ export default function InvoicesPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0 sm:p-6">
           {invoices.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
+            <div className="text-center py-8 text-muted-foreground px-4">
               No invoices found. Create your first invoice to get started.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Invoice #</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Due Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Invoice #</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {invoices.map((invoice: any) => (
+                      <TableRow key={invoice.id}>
+                        <TableCell className="font-medium">
+                          {invoice.invoiceNumber}
+                        </TableCell>
+                        <TableCell>{invoice.customer.name}</TableCell>
+                        <TableCell>
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
+                            {formatInvoiceType(invoice.type)}
+                          </span>
+                        </TableCell>
+                        <TableCell>{formatCurrency(Number(invoice.amount))}</TableCell>
+                        <TableCell>
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs rounded-full ${
+                              invoice.status === "PAID"
+                                ? "bg-green-100 text-green-800"
+                                : invoice.status === "OVERDUE"
+                                ? "bg-red-100 text-red-800"
+                                : "bg-yellow-100 text-yellow-800"
+                            }`}
+                          >
+                            {invoice.status}
+                          </span>
+                        </TableCell>
+                        <TableCell>{formatDate(invoice.dueDate)}</TableCell>
+                        <TableCell className="text-right">
+                          <Link href={`/invoices/${invoice.id}`}>
+                            <Button variant="ghost" size="sm">
+                              View
+                            </Button>
+                          </Link>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Mobile Card View */}
+              <div className="md:hidden space-y-4 p-4">
                 {invoices.map((invoice: any) => (
-                  <TableRow key={invoice.id}>
-                    <TableCell className="font-medium">
-                      {invoice.invoiceNumber}
-                    </TableCell>
-                    <TableCell>{invoice.customer.name}</TableCell>
-                    <TableCell>
-                      <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
-                        {formatInvoiceType(invoice.type)}
-                      </span>
-                    </TableCell>
-                    <TableCell>{formatCurrency(Number(invoice.amount))}</TableCell>
-                    <TableCell>
+                  <div
+                    key={invoice.id}
+                    className="border rounded-lg p-4 space-y-3 bg-white"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <p className="font-semibold text-sm">{invoice.invoiceNumber}</p>
+                        <p className="text-sm text-muted-foreground">{invoice.customer.name}</p>
+                      </div>
                       <span
                         className={`inline-flex px-2 py-1 text-xs rounded-full ${
                           invoice.status === "PAID"
@@ -249,19 +292,30 @@ export default function InvoicesPage() {
                       >
                         {invoice.status}
                       </span>
-                    </TableCell>
-                    <TableCell>{formatDate(invoice.dueDate)}</TableCell>
-                    <TableCell className="text-right">
-                      <Link href={`/invoices/${invoice.id}`}>
-                        <Button variant="ghost" size="sm">
-                          View
-                        </Button>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Amount:</span>
+                      <span className="font-semibold">{formatCurrency(Number(invoice.amount))}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Due Date:</span>
+                      <span>{formatDate(invoice.dueDate)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Type:</span>
+                      <span className="text-xs px-2 py-1 rounded-full bg-gray-100">
+                        {formatInvoiceType(invoice.type)}
+                      </span>
+                    </div>
+                    <Link href={`/invoices/${invoice.id}`} className="block">
+                      <Button variant="outline" size="sm" className="w-full">
+                        View Invoice
+                      </Button>
+                    </Link>
+                  </div>
                 ))}
-              </TableBody>
-            </Table>
+              </div>
+            </>
           )}
         </CardContent>
         {!loading && invoices.length > 0 && (

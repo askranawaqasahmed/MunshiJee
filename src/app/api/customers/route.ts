@@ -10,20 +10,17 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Scope by userId for regular users
+    const where = session.user.role === "SUPER_ADMIN" 
+      ? {} 
+      : { userId: session.user.id };
+
     const customers = await prisma.customer.findMany({
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-            name: true,
-          },
-        },
-      },
+      where,
       orderBy: { createdAt: "desc" },
     });
 
@@ -41,60 +38,39 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await request.json();
     const validatedData = customerSchema.parse(body);
 
-    const existingCustomer = await prisma.customer.findUnique({
-      where: { email: validatedData.email },
+    // Check for duplicate email within the user's customers
+    const existingCustomer = await prisma.customer.findFirst({
+      where: { 
+        userId: session.user.id,
+        email: validatedData.email 
+      },
     });
 
     if (existingCustomer) {
       return NextResponse.json(
-        { error: "Customer with this email already exists" },
+        { error: "You already have a customer with this email" },
         { status: 400 }
       );
     }
 
-    const password = generatePassword();
-    const hashedPassword = await bcrypt.hash(password, 10);
-
     const customer = await prisma.customer.create({
       data: {
+        userId: session.user.id,
         name: validatedData.name,
         email: validatedData.email,
         phone: validatedData.phone,
-        businessAddress: validatedData.businessAddress,
         contactAddress: validatedData.contactAddress,
-        user: {
-          create: {
-            email: validatedData.email,
-            name: validatedData.name,
-            password: hashedPassword,
-            role: "CUSTOMER",
-          },
-        },
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            email: true,
-          },
-        },
       },
     });
 
-    return NextResponse.json({
-      customer,
-      credentials: {
-        email: validatedData.email,
-        password,
-      },
-    });
+    return NextResponse.json({ customer });
   } catch (error: any) {
     console.error("Error creating customer:", error);
     

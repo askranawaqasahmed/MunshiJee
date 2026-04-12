@@ -280,9 +280,9 @@ export default function InvoiceDetailPage() {
             </div>
             <div>
               <div className="text-sm text-muted-foreground">
-                Business Address
+                Contact Address
               </div>
-              <div className="text-sm">{invoice.customer.businessAddress}</div>
+              <div className="text-sm">{invoice.customer.contactAddress || "N/A"}</div>
             </div>
           </CardContent>
         </Card>

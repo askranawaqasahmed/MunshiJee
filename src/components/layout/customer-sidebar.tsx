@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, FileText, CreditCard, LogOut, X } from "lucide-react";
+import { LayoutDashboard, FileText, CreditCard, LogOut, X, Users, ShoppingCart, Settings } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 
@@ -14,14 +14,29 @@ const menuItems = [
     href: "/dashboard",
   },
   {
+    title: "Customers",
+    icon: Users,
+    href: "/customers",
+  },
+  {
     title: "Invoices",
     icon: FileText,
     href: "/invoices",
   },
   {
+    title: "Sales",
+    icon: ShoppingCart,
+    href: "/sales",
+  },
+  {
     title: "Payments",
     icon: CreditCard,
     href: "/payments",
+  },
+  {
+    title: "Settings",
+    icon: Settings,
+    href: "/settings",
   },
 ];
 

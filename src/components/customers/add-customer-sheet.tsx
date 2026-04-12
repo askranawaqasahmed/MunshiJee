@@ -29,7 +29,6 @@ export function AddCustomerSheet({ open, onOpenChange, onSuccess }: AddCustomerS
     name: "",
     email: "",
     phone: "",
-    businessAddress: "",
     contactAddress: "",
   });
 
@@ -56,7 +55,6 @@ export function AddCustomerSheet({ open, onOpenChange, onSuccess }: AddCustomerS
         name: "",
         email: "",
         phone: "",
-        businessAddress: "",
         contactAddress: "",
       });
       if (onSuccess) {
@@ -78,7 +76,7 @@ export function AddCustomerSheet({ open, onOpenChange, onSuccess }: AddCustomerS
         <SheetHeader>
           <SheetTitle>Add New Customer</SheetTitle>
           <SheetDescription>
-            Enter the customer details below. All fields are required.
+            Enter the customer details below. Fields marked with * are required.
           </SheetDescription>
         </SheetHeader>
 
@@ -134,30 +132,15 @@ export function AddCustomerSheet({ open, onOpenChange, onSuccess }: AddCustomerS
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="businessAddress">Business Address *</Label>
-              <Input
-                id="businessAddress"
-                value={formData.businessAddress}
-                onChange={(e) =>
-                  setFormData({ ...formData, businessAddress: e.target.value })
-                }
-                required
-                disabled={loading}
-                placeholder="123 Business St, City, State"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="contactAddress">Contact Address *</Label>
+              <Label htmlFor="contactAddress">Contact Address</Label>
               <Input
                 id="contactAddress"
                 value={formData.contactAddress}
                 onChange={(e) =>
                   setFormData({ ...formData, contactAddress: e.target.value })
                 }
-                required
                 disabled={loading}
-                placeholder="456 Contact Ave, City, State"
+                placeholder="123 Main St, City, State"
               />
             </div>
           </form>

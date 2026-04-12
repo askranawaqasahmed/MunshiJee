@@ -10,7 +10,8 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  if (pathname === "/login") {
+  // Allow access to login and signup pages without authentication
+  if (pathname === "/login" || pathname === "/signup") {
     if (token) {
       const dashboardUrl = new URL("/dashboard", request.url);
       return NextResponse.redirect(dashboardUrl);
@@ -18,6 +19,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Require authentication for all other routes
   if (!token) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("callbackUrl", pathname);
@@ -26,24 +28,27 @@ export async function middleware(request: NextRequest) {
 
   const role = token.role as string;
 
-  if (pathname.startsWith("/dashboard") || pathname === "/") {
-    if (!token) {
-      return NextResponse.redirect(new URL("/login", request.url));
-    }
-    return NextResponse.next();
+  // Check token expiration
+  if (token.exp && typeof token.exp === 'number' && Date.now() >= token.exp * 1000) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("expired", "true");
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("next-auth.session-token");
+    response.cookies.delete("__Secure-next-auth.session-token");
+    return response;
   }
 
-  if (pathname.startsWith("/(admin)") || 
-      pathname.startsWith("/customers") ||
-      pathname.startsWith("/invoices") ||
-      pathname.startsWith("/sales") ||
-      pathname.startsWith("/payments") ||
-      pathname.startsWith("/settings")) {
+  // Super admin only routes
+  if (pathname.startsWith("/users") || pathname.startsWith("/admin")) {
     if (role !== "SUPER_ADMIN") {
       return NextResponse.redirect(new URL("/dashboard", request.url));
     }
   }
 
+  // Allow authenticated users to access their own data
+  // invoices, customers, sales, payments, settings are accessible to all authenticated users
+  // Dashboard is accessible to all authenticated users
+  
   return NextResponse.next();
 }
 

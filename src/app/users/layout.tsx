@@ -3,11 +3,10 @@
 import { useSession } from "next-auth/react";
 import { useState } from "react";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
-import { CustomerSidebar } from "@/components/layout/customer-sidebar";
 import { Header } from "@/components/layout/header";
 import { SessionMonitor } from "@/components/session-monitor";
 
-export default function DashboardLayout({
+export default function UsersLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -27,23 +26,14 @@ export default function DashboardLayout({
     return null;
   }
 
-  const isAdmin = session.user.role === "SUPER_ADMIN";
-
   return (
     <>
       <SessionMonitor />
       <div className="flex h-screen overflow-hidden">
-        {isAdmin ? (
-          <AdminSidebar
-            mobileOpen={mobileMenuOpen}
-            onMobileClose={() => setMobileMenuOpen(false)}
-          />
-        ) : (
-          <CustomerSidebar
-            mobileOpen={mobileMenuOpen}
-            onMobileClose={() => setMobileMenuOpen(false)}
-          />
-        )}
+        <AdminSidebar
+          mobileOpen={mobileMenuOpen}
+          onMobileClose={() => setMobileMenuOpen(false)}
+        />
         <div className="flex-1 flex flex-col overflow-hidden">
           <Header onMenuClick={() => setMobileMenuOpen(true)} />
           <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6">

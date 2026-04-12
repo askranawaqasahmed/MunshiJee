@@ -2,18 +2,36 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, FileText, DollarSign, AlertCircle } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
-export async function AdminDashboard() {
-  const [customerCount, invoiceCount, totalRevenue, pendingPayments] =
+interface AdminDashboardProps {
+  userId: string;
+}
+
+export async function AdminDashboard({ userId }: AdminDashboardProps) {
+  const [customerCount, invoiceCount, totalRevenue, pendingPayments, recentInvoices] =
     await Promise.all([
-      prisma.customer.count(),
-      prisma.invoice.count(),
+      prisma.customer.count({ where: { userId } }),
+      prisma.invoice.count({ where: { userId } }),
       prisma.payment.aggregate({
+        where: { userId },
         _sum: { amount: true },
       }),
       prisma.invoice.aggregate({
-        _sum: { amount: true },
         where: {
+          userId,
           status: { in: ["SENT", "OVERDUE"] },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.invoice.findMany({
+        where: { userId },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+        include: {
+          customer: {
+            select: {
+              name: true,
+            },
+          },
         },
       }),
     ]);
@@ -48,7 +66,7 @@ export async function AdminDashboard() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Admin Dashboard</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold">Dashboard</h1>
         <p className="text-sm sm:text-base text-muted-foreground">
           Overview of your invoicing system
         </p>
@@ -75,12 +93,38 @@ export async function AdminDashboard() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity</CardTitle>
+          <CardTitle>Recent Invoices</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            No recent activity to display
-          </p>
+          {recentInvoices.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              No recent invoices
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {recentInvoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 py-3 border-b last:border-0"
+                >
+                  <div className="flex-1">
+                    <p className="font-medium text-sm sm:text-base">{invoice.invoiceNumber}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {invoice.customer.name}
+                    </p>
+                  </div>
+                  <div className="flex justify-between sm:block sm:text-right">
+                    <p className="font-medium text-sm sm:text-base">
+                      ${Number(invoice.amount).toFixed(2)}
+                    </p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {invoice.status}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

@@ -25,6 +25,7 @@ async function main() {
       email: adminEmail,
       name: "Super Admin",
       password: hashedPassword,
+      phoneNumber: process.env.ADMIN_PHONE || "+1234567890",
       role: "SUPER_ADMIN",
     },
   });

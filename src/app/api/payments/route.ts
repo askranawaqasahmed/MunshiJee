@@ -20,8 +20,9 @@ export async function GET(request: NextRequest) {
 
     const where: Prisma.PaymentWhereInput = {};
 
-    if (session.user.role === "CUSTOMER" && session.user.customerId) {
-      where.customerId = session.user.customerId;
+    // Scope by userId for regular users
+    if (session.user.role !== "SUPER_ADMIN") {
+      where.userId = session.user.id;
     }
 
     const [payments, total] = await Promise.all([
@@ -71,7 +72,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -84,6 +85,7 @@ export async function POST(request: NextRequest) {
 
     const payment = await prisma.payment.create({
       data: {
+        userId: session.user.id,
         invoiceId: validatedData.invoiceId,
         customerId: validatedData.customerId,
         amount: new Prisma.Decimal(validatedData.amount),

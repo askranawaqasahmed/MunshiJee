@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -48,48 +48,36 @@ export async function POST(request: NextRequest) {
 
         const validatedData = bulkCustomerRowSchema.parse(rowData);
 
-        const existingCustomer = await prisma.customer.findUnique({
-          where: { email: validatedData.email },
+        // Check if customer already exists for this user
+        const existingCustomer = await prisma.customer.findFirst({
+          where: { 
+            userId: session.user.id,
+            email: validatedData.email 
+          },
         });
 
         if (existingCustomer) {
           results.failed.push({
             row: i + 1,
             data: rowData,
-            error: "Email already exists",
+            error: "You already have a customer with this email",
           });
           continue;
         }
 
-        const password = generatePassword();
-        const hashedPassword = await bcrypt.hash(password, 10);
-
         const customer = await prisma.customer.create({
           data: {
+            userId: session.user.id,
             name: validatedData.name,
             email: validatedData.email,
             phone: validatedData.phone,
-            businessAddress: validatedData.address,
             contactAddress: validatedData.address,
-            user: {
-              create: {
-                email: validatedData.email,
-                name: validatedData.name,
-                password: hashedPassword,
-                role: "CUSTOMER",
-              },
-            },
           },
         });
 
         results.success.push({
           row: i + 1,
           customer,
-          credentials: {
-            name: validatedData.name,
-            email: validatedData.email,
-            password,
-          },
         });
       } catch (error: any) {
         results.failed.push({

@@ -23,8 +23,9 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const pdfDownloadUrl = `${baseUrl}/api/invoices/pdf/${pdfToken}`;
 
-    const emailSettings = await getEmailSettings();
-    const smsSettings = await getSmsSettings();
+    // Get settings for the user who owns this invoice
+    const emailSettings = await getEmailSettings(invoice.userId);
+    const smsSettings = await getSmsSettings(invoice.userId);
 
     const invoiceData = {
       customerName: invoice.customer.name,
@@ -164,15 +165,22 @@ async function updateNotificationLog(
   });
 }
 
-export async function getEmailSettings(): Promise<EmailConfig | null> {
+export async function getEmailSettings(userId: string | null = null): Promise<EmailConfig | null> {
   try {
-    const providerSetting = await prisma.settings.findUnique({
-      where: { key: 'email_provider' },
-    });
-
-    const configSetting = await prisma.settings.findUnique({
-      where: { key: 'email_config' },
-    });
+    const [providerSetting, configSetting] = await Promise.all([
+      prisma.settings.findFirst({
+        where: { 
+          key: 'email_provider',
+          userId: userId
+        },
+      }),
+      prisma.settings.findFirst({
+        where: { 
+          key: 'email_config',
+          userId: userId
+        },
+      }),
+    ]);
 
     if (!providerSetting || !configSetting) {
       return null;
@@ -188,15 +196,22 @@ export async function getEmailSettings(): Promise<EmailConfig | null> {
   }
 }
 
-export async function getSmsSettings(): Promise<SmsConfig | null> {
+export async function getSmsSettings(userId: string | null = null): Promise<SmsConfig | null> {
   try {
-    const providerSetting = await prisma.settings.findUnique({
-      where: { key: 'sms_provider' },
-    });
-
-    const configSetting = await prisma.settings.findUnique({
-      where: { key: 'sms_config' },
-    });
+    const [providerSetting, configSetting] = await Promise.all([
+      prisma.settings.findFirst({
+        where: { 
+          key: 'sms_provider',
+          userId: userId
+        },
+      }),
+      prisma.settings.findFirst({
+        where: { 
+          key: 'sms_config',
+          userId: userId
+        },
+      }),
+    ]);
 
     if (!providerSetting || !configSetting) {
       return null;

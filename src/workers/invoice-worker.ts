@@ -41,6 +41,7 @@ async function processRecurringInvoices() {
       const newInvoice = await prisma.invoice.create({
         data: {
           invoiceNumber,
+          userId: invoice.userId,
           customerId: invoice.customerId,
           type: invoice.type,
           amount: invoice.amount,
@@ -85,33 +86,37 @@ async function processRecurringInvoices() {
   console.log("Recurring invoice processing complete");
 }
 
-const recurringInvoicesWorker = new Worker(
-  "recurring-invoices",
-  async (job) => {
-    console.log(`Processing job ${job.id}`);
-    await processRecurringInvoices();
-  },
-  { connection }
-);
+if (connection) {
+  const recurringInvoicesWorker = new Worker(
+    "recurring-invoices",
+    async (job) => {
+      console.log(`Processing job ${job.id}`);
+      await processRecurringInvoices();
+    },
+    { connection }
+  );
 
-recurringInvoicesWorker.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`);
-});
+  recurringInvoicesWorker.on("completed", (job) => {
+    console.log(`Job ${job.id} completed`);
+  });
 
-recurringInvoicesWorker.on("failed", (job, err) => {
-  console.error(`Job ${job?.id} failed:`, err);
-});
+  recurringInvoicesWorker.on("failed", (job, err) => {
+    console.error(`Job ${job?.id} failed:`, err);
+  });
 
-console.log("Invoice worker started. Listening for jobs...");
+  console.log("Invoice worker started. Listening for jobs...");
+  
+  process.on("SIGINT", async () => {
+    console.log("Shutting down worker...");
+    await recurringInvoicesWorker.close();
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+} else {
+  console.warn("Redis connection not available. Worker not started.");
+}
 
 setInterval(async () => {
   console.log("Running scheduled recurring invoice check...");
   await processRecurringInvoices();
 }, 24 * 60 * 60 * 1000);
-
-process.on("SIGINT", async () => {
-  console.log("Shutting down worker...");
-  await recurringInvoicesWorker.close();
-  await prisma.$disconnect();
-  process.exit(0);
-});

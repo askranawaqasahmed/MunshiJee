@@ -9,7 +9,7 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
-  CUSTOMER
+  USER
 }
 
 enum InvoiceType {
@@ -53,36 +53,43 @@ enum NotificationStatus {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  name       String
-  password   String
-  role       Role     @default(CUSTOMER)
-  customerId String?  @unique
-  customer   Customer? @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String
+  password    String
+  phoneNumber String?
+  role        Role     @default(USER)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  customers     Customer[]
+  invoices      Invoice[]
+  sales         Sale[]
+  payments      Payment[]
+  settings      Settings[]
 
   @@index([email])
-  @@index([customerId])
+  @@index([role])
 }
 
 model Customer {
   id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   name            String
-  email           String    @unique
+  email           String
   phone           String
-  businessAddress String
-  contactAddress  String
+  contactAddress  String?
   isActive        Boolean   @default(true)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  user     User?
   invoices Invoice[]
   sales    Sale[]
   payments Payment[]
 
+  @@unique([userId, email])
+  @@index([userId])
   @@index([email])
   @@index([isActive])
 }
@@ -90,6 +97,8 @@ model Customer {
 model Invoice {
   id                   String             @id @default(cuid())
   invoiceNumber        String             @unique
+  userId               String
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   customerId           String
   customer             Customer           @relation(fields: [customerId], references: [id], onDelete: Cascade)
   type                 InvoiceType
@@ -109,6 +118,7 @@ model Invoice {
   sales    Sale[]
   notifications NotificationLog[]
 
+  @@index([userId])
   @@index([customerId])
   @@index([invoiceNumber])
   @@index([status])
@@ -129,6 +139,8 @@ model InvoiceItem {
 
 model Sale {
   id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   customerId  String
   customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
   description String
@@ -139,6 +151,7 @@ model Sale {
   invoice     Invoice? @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
   createdAt   DateTime @default(now())
 
+  @@index([userId])
   @@index([customerId])
   @@index([invoiced])
   @@index([saleDate])
@@ -146,6 +159,8 @@ model Sale {
 
 model Payment {
   id          String        @id @default(cuid())
+  userId      String
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   invoiceId   String
   invoice     Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
   customerId  String
@@ -157,6 +172,7 @@ model Payment {
   notes       String?       @db.Text
   createdAt   DateTime      @default(now())
 
+  @@index([userId])
   @@index([invoiceId])
   @@index([customerId])
   @@index([paymentDate])
@@ -164,11 +180,15 @@ model Payment {
 
 model Settings {
   id        String   @id @default(cuid())
-  key       String   @unique
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
   value     Json
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@unique([key, userId])
+  @@index([userId])
   @@index([key])
 }
 

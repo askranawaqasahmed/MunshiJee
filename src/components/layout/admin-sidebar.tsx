@@ -19,29 +19,14 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "Super Admin",
     icon: LayoutDashboard,
-    href: "/dashboard",
+    href: "/admin",
   },
   {
-    title: "Customers",
+    title: "User Management",
     icon: Users,
-    href: "/customers",
-  },
-  {
-    title: "Invoices",
-    icon: FileText,
-    href: "/invoices",
-  },
-  {
-    title: "Sales",
-    icon: ShoppingCart,
-    href: "/sales",
-  },
-  {
-    title: "Payments",
-    icon: CreditCard,
-    href: "/payments",
+    href: "/users",
   },
   {
     title: "Settings",

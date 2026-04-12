@@ -36,7 +36,6 @@ export function EditCustomerSheet({
     name: "",
     email: "",
     phone: "",
-    businessAddress: "",
     contactAddress: "",
   });
 
@@ -62,8 +61,7 @@ export function EditCustomerSheet({
         name: data.customer.name,
         email: data.customer.email,
         phone: data.customer.phone,
-        businessAddress: data.customer.businessAddress,
-        contactAddress: data.customer.contactAddress,
+        contactAddress: data.customer.contactAddress || "",
       });
     } catch (error: any) {
       setError(error.message);
@@ -115,7 +113,7 @@ export function EditCustomerSheet({
         <SheetHeader>
           <SheetTitle>Edit Customer</SheetTitle>
           <SheetDescription>
-            Update the customer details below. All fields are required.
+            Update the customer details below. Fields marked with * are required.
           </SheetDescription>
         </SheetHeader>
 
@@ -174,28 +172,15 @@ export function EditCustomerSheet({
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-businessAddress">Business Address *</Label>
-                  <Input
-                    id="edit-businessAddress"
-                    value={formData.businessAddress}
-                    onChange={(e) =>
-                      setFormData({ ...formData, businessAddress: e.target.value })
-                    }
-                    required
-                    disabled={saving}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-contactAddress">Contact Address *</Label>
+                  <Label htmlFor="edit-contactAddress">Contact Address</Label>
                   <Input
                     id="edit-contactAddress"
                     value={formData.contactAddress}
                     onChange={(e) =>
                       setFormData({ ...formData, contactAddress: e.target.value })
                     }
-                    required
                     disabled={saving}
+                    placeholder="123 Main St, City, State"
                   />
                 </div>
               </form>

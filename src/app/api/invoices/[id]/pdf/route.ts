@@ -6,16 +6,17 @@ import puppeteer from "puppeteer";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
 
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const htmlBuffer = await generateInvoicePDF(params.id);
+    const htmlBuffer = await generateInvoicePDF(id);
     const html = htmlBuffer.toString("utf-8");
 
     const browser = await puppeteer.launch({
@@ -41,7 +42,7 @@ export async function GET(
     return new NextResponse(Buffer.from(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="invoice-${params.id}.pdf"`,
+        "Content-Disposition": `attachment; filename="invoice-${id}.pdf"`,
       },
     });
   } catch (error) {

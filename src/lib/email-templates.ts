@@ -226,3 +226,179 @@ export function getTestEmailTemplate(data: TestEmailData): string {
 </html>
   `.trim();
 }
+
+export interface WelcomeEmailData {
+  name: string;
+  email: string;
+}
+
+export function getWelcomeEmailTemplate(data: WelcomeEmailData): string {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Welcome to MunshiJee</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
+      line-height: 1.6;
+    }
+    .email-container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 30px;
+      text-align: center;
+      color: #ffffff;
+    }
+    .header h1 {
+      margin: 0 0 10px 0;
+      font-size: 32px;
+      font-weight: 600;
+    }
+    .header p {
+      margin: 0;
+      font-size: 16px;
+      opacity: 0.9;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .greeting {
+      font-size: 18px;
+      color: #333333;
+      margin-bottom: 20px;
+    }
+    .welcome-message {
+      background-color: #f8f9fa;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      margin: 25px 0;
+      border-radius: 4px;
+    }
+    .credentials-box {
+      background-color: #f8f9fa;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 25px 0;
+    }
+    .credential-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .credential-row:last-child {
+      border-bottom: none;
+    }
+    .credential-label {
+      color: #666666;
+      font-weight: 500;
+    }
+    .credential-value {
+      color: #333333;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    .features-list {
+      margin: 25px 0;
+    }
+    .features-list li {
+      color: #666666;
+      margin: 10px 0;
+      padding-left: 10px;
+    }
+    .features-list li::marker {
+      color: #667eea;
+    }
+    .footer {
+      background-color: #f8f9fa;
+      padding: 25px 30px;
+      text-align: center;
+      color: #666666;
+      font-size: 14px;
+    }
+    .footer p {
+      margin: 5px 0;
+    }
+    .divider {
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #667eea, transparent);
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header">
+      <h1>Welcome to MunshiJee! 🎉</h1>
+      <p>Your Invoice Management System</p>
+    </div>
+    
+    <div class="content">
+      <p class="greeting">Hi ${data.name},</p>
+      
+      <div class="welcome-message">
+        <p style="margin: 0; color: #333333;">
+          Thank you for signing up! Your account has been successfully created and you're ready to start managing your invoices, customers, and sales with ease.
+        </p>
+      </div>
+      
+      <p>Your account details:</p>
+      
+      <div class="credentials-box">
+        <div class="credential-row">
+          <span class="credential-label">Email:</span>
+          <span class="credential-value">${data.email}</span>
+        </div>
+        <div class="credential-row">
+          <span class="credential-label">Name:</span>
+          <span class="credential-value">${data.name}</span>
+        </div>
+      </div>
+      
+      <div class="divider"></div>
+      
+      <h3 style="color: #333333;">What you can do with MunshiJee:</h3>
+      
+      <ul class="features-list">
+        <li>Create and manage invoices (one-time, recurring, and bulk)</li>
+        <li>Track customers and their payment history</li>
+        <li>Record sales and generate invoices from sales data</li>
+        <li>Send professional invoice emails to your customers</li>
+        <li>Configure your own SMTP settings for email delivery</li>
+        <li>Monitor payments and track overdue invoices</li>
+      </ul>
+      
+      <p style="margin-top: 30px; color: #666666;">
+        Ready to get started? Log in to your dashboard and explore all the features MunshiJee has to offer!
+      </p>
+      
+      <p style="font-size: 14px; color: #666666; margin-top: 30px;">
+        If you have any questions or need assistance, please don't hesitate to reach out to our support team.
+      </p>
+    </div>
+    
+    <div class="footer">
+      <p><strong>MunshiJee</strong></p>
+      <p>Professional Invoice Management System</p>
+      <p style="margin-top: 15px; font-size: 12px;">
+        This is an automated message. Please do not reply to this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}

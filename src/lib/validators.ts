@@ -4,8 +4,7 @@ export const customerSchema = z.object({
   name: z.string().min(1, "Name is required"),
   email: z.string().email("Invalid email address"),
   phone: z.string().min(1, "Phone is required"),
-  businessAddress: z.string().min(1, "Business address is required"),
-  contactAddress: z.string().min(1, "Contact address is required"),
+  contactAddress: z.string().optional(),
 });
 
 export const bulkCustomerRowSchema = z.object({
@@ -53,8 +52,24 @@ export const paymentSchema = z.object({
   notes: z.string().optional(),
 });
 
+export const signupSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Invalid email address"),
+  phoneNumber: z.string().min(1, "Phone number is required"),
+  password: z
+    .string()
+    .min(8, "Password must be at least 8 characters")
+    .regex(/[0-9]/, "Password must contain at least one number")
+    .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
 export type CustomerInput = z.infer<typeof customerSchema>;
 export type BulkCustomerRow = z.infer<typeof bulkCustomerRowSchema>;
 export type InvoiceInput = z.infer<typeof invoiceSchema>;
 export type SaleInput = z.infer<typeof saleSchema>;
 export type PaymentInput = z.infer<typeof paymentSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;

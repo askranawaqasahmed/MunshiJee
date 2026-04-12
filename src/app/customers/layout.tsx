@@ -1,10 +1,11 @@
 "use client";
 
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AdminSidebar } from "@/components/layout/admin-sidebar";
+import { CustomerSidebar } from "@/components/layout/customer-sidebar";
 import { Header } from "@/components/layout/header";
+import { SessionMonitor } from "@/components/session-monitor";
 
 export default function CustomersLayout({
   children,
@@ -14,12 +15,6 @@ export default function CustomersLayout({
   const { data: session, status } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    if (status === "unauthenticated" || (session && session.user.role !== "SUPER_ADMIN")) {
-      redirect("/dashboard");
-    }
-  }, [session, status]);
-
   if (status === "loading") {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -28,22 +23,34 @@ export default function CustomersLayout({
     );
   }
 
-  if (!session || session.user.role !== "SUPER_ADMIN") {
+  if (!session) {
     return null;
   }
 
+  const isAdmin = session.user.role === "SUPER_ADMIN";
+
   return (
-    <div className="flex h-screen overflow-hidden">
-      <AdminSidebar
-        mobileOpen={mobileMenuOpen}
-        onMobileClose={() => setMobileMenuOpen(false)}
-      />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMenuClick={() => setMobileMenuOpen(true)} />
-        <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6">
-          {children}
-        </main>
+    <>
+      <SessionMonitor />
+      <div className="flex h-screen overflow-hidden">
+        {isAdmin ? (
+          <AdminSidebar
+            mobileOpen={mobileMenuOpen}
+            onMobileClose={() => setMobileMenuOpen(false)}
+          />
+        ) : (
+          <CustomerSidebar
+            mobileOpen={mobileMenuOpen}
+            onMobileClose={() => setMobileMenuOpen(false)}
+          />
+        )}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header onMenuClick={() => setMobileMenuOpen(true)} />
+          <main className="flex-1 overflow-y-auto bg-gray-100 p-4 sm:p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

@@ -65,7 +65,7 @@ export async function generateInvoicePDF(invoiceId: string): Promise<Buffer> {
       <p><strong>${invoice.customer.name}</strong></p>
       <p>${invoice.customer.email}</p>
       <p>${invoice.customer.phone}</p>
-      <p>${invoice.customer.businessAddress}</p>
+      ${invoice.customer.contactAddress ? `<p>${invoice.customer.contactAddress}</p>` : ""}
     </div>
     <div class="info-block" style="text-align: right;">
       <p><strong>Issue Date:</strong> ${new Date(invoice.issueDate).toLocaleDateString()}</p>

@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -18,8 +18,14 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
+    // Scope by userId for regular users
+    const where = session.user.role === "SUPER_ADMIN" 
+      ? {} 
+      : { userId: session.user.id };
+
     const [sales, total] = await Promise.all([
       prisma.sale.findMany({
+        where,
         include: {
           customer: {
             select: {
@@ -39,7 +45,7 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.sale.count(),
+      prisma.sale.count({ where }),
     ]);
 
     return NextResponse.json({
@@ -64,7 +70,7 @@ export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
 
-    if (!session || session.user.role !== "SUPER_ADMIN") {
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
@@ -77,6 +83,7 @@ export async function POST(request: NextRequest) {
 
     const sale = await prisma.sale.create({
       data: {
+        userId: session.user.id,
         customerId: validatedData.customerId,
         description: validatedData.description,
         amount: new Prisma.Decimal(validatedData.amount),

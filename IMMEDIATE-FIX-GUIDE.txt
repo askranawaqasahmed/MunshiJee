@@ -1,0 +1,200 @@
+================================================================================
+IMMEDIATE FIX GUIDE - Production Server Issues
+================================================================================
+
+CURRENT PROBLEMS:
+1. Missing scripts in package.json (db:generate not found)
+2. Wrong .env configuration (development instead of production)
+
+
+SOLUTION 1: AUTOMATED FIX (EASIEST)
+================================================================================
+
+On your development machine:
+  1. cd C:\Users\ranaw\source\repos\MunshiJee
+  2. FIX-PRODUCTION-NOW.bat
+
+This will automatically:
+  ✓ Copy correct package.json
+  ✓ Copy Prisma schema
+  ✓ Install dependencies
+  ✓ Generate Prisma client
+
+Then skip to "FIX YOUR .ENV FILE" section below.
+
+
+SOLUTION 2: MANUAL FIX
+================================================================================
+
+Step 1: Copy correct package.json
+----------------------------------
+On development machine:
+  copy C:\Users\ranaw\source\repos\MunshiJee\package.json C:\inetpub\wwwroot\munshijee.ideageek.pk\
+
+
+Step 2: Copy Prisma schema
+---------------------------
+On development machine:
+  mkdir C:\inetpub\wwwroot\munshijee.ideageek.pk\src\prisma
+  copy C:\Users\ranaw\source\repos\MunshiJee\src\prisma\schema.prisma C:\inetpub\wwwroot\munshijee.ideageek.pk\src\prisma\
+
+
+Step 3: Install dependencies
+-----------------------------
+On production server:
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  npm install
+
+
+Step 4: Generate Prisma client
+-------------------------------
+On production server:
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  npx prisma generate --schema=./src/prisma/schema.prisma
+
+
+SOLUTION 3: DIRECT COMMAND (QUICKEST)
+================================================================================
+
+If you just need Prisma client generated NOW:
+
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  npx prisma generate --schema=./src/prisma/schema.prisma
+
+This bypasses npm scripts and runs Prisma directly.
+
+
+FIX YOUR .ENV FILE
+================================================================================
+
+Your current .env has issues:
+  ✗ NODE_ENV="development"     (should be "production")
+  ✗ NEXTAUTH_URL points to localhost (should be your domain)
+  ? Database might be wrong server
+
+
+CORRECT .ENV FOR PRODUCTION:
+-----------------------------
+
+Edit C:\inetpub\wwwroot\munshijee.ideageek.pk\.env
+
+Replace with:
+
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/munshijee?schema=public"
+NEXTAUTH_URL="https://munshijee.ideageek.pk"
+NEXTAUTH_SECRET="RLyP1e58mJ3WqYxauVz33mQoFgpWVYrF"
+NODE_ENV="production"
+
+
+IMPORTANT DATABASE NOTES:
+--------------------------
+
+1. If your PostgreSQL is on the same server: use localhost
+2. If PostgreSQL is on different server: use that server's IP/hostname
+3. Make sure the munshijee database exists
+4. Make sure you ran dbeaver-setup.sql to create tables
+
+Check database connection:
+  psql -U postgres -d munshijee -c "SELECT COUNT(*) FROM \"User\";"
+
+
+VERIFY EVERYTHING IS FIXED
+================================================================================
+
+Run these commands on production server:
+
+1. Check npm scripts exist:
+   npm run
+   
+   Should show: dev, build, start, db:generate, etc.
+
+
+2. Check Prisma client:
+   node -e "console.log(require('@prisma/client'))"
+   
+   Should not error
+
+
+3. Test start:
+   npm start
+   
+   Should start without errors
+
+
+COMMON ERRORS & FIXES
+================================================================================
+
+Error: "Cannot find module '@prisma/client'"
+Fix: npm install && npx prisma generate --schema=./src/prisma/schema.prisma
+
+Error: "Database connection failed"
+Fix: Check DATABASE_URL in .env file
+
+Error: "Missing script: start"
+Fix: Copy package.json from development machine
+
+Error: "Port 3000 already in use"
+Fix: Kill existing process or use different port
+     set PORT=8080
+     npm start
+
+
+FINAL STEPS
+================================================================================
+
+After all fixes:
+
+1. Verify database is setup:
+   ✓ munshijee database exists
+   ✓ Tables created (ran dbeaver-setup.sql)
+   ✓ Super admin account exists
+
+2. Test the application:
+   cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+   npm start
+   
+   Open: http://localhost:3000
+
+3. If it works, install as Windows Service:
+   See: WINDOWS-DEPLOYMENT.md
+
+4. Configure reverse proxy (if using IIS/nginx)
+
+
+QUICK CHECKLIST
+================================================================================
+
+Production Server Must Have:
+ □ package.json (with all scripts)
+ □ .next folder (build output)
+ □ public folder (static files)
+ □ src/prisma/schema.prisma
+ □ node_modules (from npm install)
+ □ .env (with production values)
+ □ Database setup complete
+
+To verify, run on production:
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  verify-deployment.bat
+
+
+NEED MORE HELP?
+================================================================================
+
+1. Run FIX-PRODUCTION-NOW.bat (automated fix)
+2. Read COPY-TO-PRODUCTION.md (complete guide)
+3. Read WINDOWS-DEPLOYMENT.md (Windows service setup)
+4. Check verify-deployment.bat output
+
+
+EMERGENCY CONTACT
+================================================================================
+
+If still stuck:
+1. Check all files are copied (see COPY-TO-PRODUCTION.md)
+2. Verify database connection works
+3. Check Windows Event Viewer for errors
+4. Review npm error logs in:
+   C:\Users\askid\AppData\Local\npm-cache\_logs\
+
+================================================================================

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, SubscriptionPlanType } from "@prisma/client";
 import * as bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
@@ -7,10 +7,18 @@ async function main() {
   console.log("Starting database seed...");
 
   console.log("Seeding subscription plans...");
-  const plans = [
+  const plans: Array<{
+    name: string;
+    slug: SubscriptionPlanType;
+    emailLimit: number;
+    smsLimit: number;
+    price: number;
+    description: string;
+    isFree: boolean;
+  }> = [
     {
       name: "Free",
-      slug: "FREE",
+      slug: SubscriptionPlanType.FREE,
       emailLimit: 10,
       smsLimit: 0,
       price: 0,
@@ -19,7 +27,7 @@ async function main() {
     },
     {
       name: "Starter",
-      slug: "STARTER",
+      slug: SubscriptionPlanType.STARTER,
       emailLimit: 1000,
       smsLimit: 1000,
       price: 20,
@@ -28,7 +36,7 @@ async function main() {
     },
     {
       name: "Growth",
-      slug: "GROWTH",
+      slug: SubscriptionPlanType.GROWTH,
       emailLimit: 5000,
       smsLimit: 5000,
       price: 50,
@@ -37,7 +45,7 @@ async function main() {
     },
     {
       name: "Professional",
-      slug: "PROFESSIONAL",
+      slug: SubscriptionPlanType.PROFESSIONAL,
       emailLimit: 10000,
       smsLimit: 10000,
       price: 100,
@@ -46,7 +54,7 @@ async function main() {
     },
     {
       name: "Enterprise",
-      slug: "ENTERPRISE",
+      slug: SubscriptionPlanType.ENTERPRISE,
       emailLimit: 50000,
       smsLimit: 50000,
       price: 1000,
@@ -57,8 +65,15 @@ async function main() {
 
   for (const plan of plans) {
     await prisma.subscriptionPlan.upsert({
-      where: { slug: plan.slug as any },
-      update: plan,
+      where: { slug: plan.slug },
+      update: {
+        name: plan.name,
+        emailLimit: plan.emailLimit,
+        smsLimit: plan.smsLimit,
+        price: plan.price,
+        description: plan.description,
+        isFree: plan.isFree,
+      },
       create: plan,
     });
     console.log(`Created/updated plan: ${plan.name}`);

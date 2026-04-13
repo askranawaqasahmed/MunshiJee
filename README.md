@@ -65,6 +65,17 @@ A comprehensive invoicing and billing management system built with Next.js, Post
    **Note:** Redis is optional. Uncomment `REDIS_URL` in `.env` only if you want automated recurring invoice generation.
 
 4. **Set up the database**
+   
+   **Option 1: Using DBeaver (Easiest)**
+   - Open DBeaver and run `dbeaver-setup.sql`
+   
+   **Option 2: Using Makefile**
+   ```bash
+   make db-setup          # Linux/Mac
+   make.bat db-setup      # Windows
+   ```
+   
+   **Option 3: Manual**
    ```bash
    npm run db:generate
    npm run db:migrate
@@ -72,11 +83,17 @@ A comprehensive invoicing and billing management system built with Next.js, Post
    ```
 
 5. **Start the development server**
+   
+   **Using Makefile (Recommended):**
+   ```bash
+   make dev          # Linux/Mac
+   make.bat dev      # Windows
+   ```
+   
+   **Or manually:**
    ```bash
    npm run dev
    ```
-
-   Or use the Makefile (in `src/` directory):
    ```bash
    cd src
    make dev
@@ -85,6 +102,81 @@ A comprehensive invoicing and billing management system built with Next.js, Post
 6. **Access the application**
    - Open http://localhost:3000
    - Login with the admin credentials from your `.env` file
+
+## 🛠️ Build for Production
+
+### Quick Build
+
+**Windows:**
+```cmd
+make.bat build
+```
+
+**Linux/Mac:**
+```bash
+make build
+```
+
+This will:
+1. Install dependencies
+2. Generate Prisma client
+3. Build the Next.js application
+
+### Build Output
+
+After building, you'll have these files ready to copy:
+- `.next/` - Build output
+- `public/` - Static files  
+- `package.json` - Dependencies
+- `package-lock.json` - Lock file
+
+### Manual Build (without Makefile)
+```bash
+npm install
+npm run db:generate
+npm run build
+```
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `make build` | Build for production |
+| `make install` | Install dependencies |
+| `make dev` | Start development server |
+| `make clean` | Clean build files |
+| `make rebuild` | Clean and rebuild |
+
+See [BUILD-GUIDE.md](./BUILD-GUIDE.md) for detailed instructions on copying files and deployment.
+
+## 📦 Database Setup
+
+Run `dbeaver-setup.sql` in DBeaver - it creates:
+- All tables and indexes
+- 5 subscription plans
+- Super admin account
+
+See [DBEAVER-SETUP.md](./DBEAVER-SETUP.md) for instructions.
+
+## 🪟 Windows Production Deployment
+
+If you're deploying on Windows Server and getting PM2 errors:
+
+**Quick Solution:**
+```cmd
+# Simple start (for testing)
+npm start
+
+# Or use Windows Service (recommended)
+# See WINDOWS-QUICK-START.txt
+```
+
+**Recommended for Production:**
+1. Use NSSM (Non-Sucking Service Manager)
+2. Download from: https://nssm.cc/download
+3. Install as Windows Service
+
+See [WINDOWS-DEPLOYMENT.md](./WINDOWS-DEPLOYMENT.md) for complete Windows deployment guide.
 
 ## Documentation
 

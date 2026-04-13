@@ -1,0 +1,127 @@
+================================================================================
+QUICK FIX - Missing "start" Script Error
+================================================================================
+
+ERROR: npm error Missing script: "start"
+
+CAUSE: package.json file is missing or not copied to production server
+
+
+IMMEDIATE FIX (Choose One):
+================================================================================
+
+Option 1: Copy package.json Manually
+-------------------------------------
+1. Copy this file from development to production:
+   C:\Users\ranaw\source\repos\MunshiJee\package.json
+   
+   To:
+   C:\inetpub\wwwroot\munshijee.ideageek.pk\package.json
+
+2. On production server:
+   cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+   npm install
+   npm start
+
+
+Option 2: Use Automated Copy Script
+------------------------------------
+On your development machine:
+   cd C:\Users\ranaw\source\repos\MunshiJee
+   copy-to-production.bat
+
+Then on production server:
+   cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+   npm install
+   npm run db:generate
+   npm start
+
+
+Option 3: Copy All Files Manually
+----------------------------------
+Copy these from development to production:
+
+Required:
+  ✓ .next\                  (entire folder)
+  ✓ public\                 (entire folder)
+  ✓ package.json            (file)
+  ✓ package-lock.json       (file)
+  ✓ next.config.mjs         (file)
+  ✓ tsconfig.json           (file)
+
+Then on production:
+  npm install
+  npm run db:generate
+  npm start
+
+
+VERIFY FILES COPIED CORRECTLY:
+================================================================================
+
+On production server, run:
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  dir package.json
+
+Should show: package.json file
+
+Check if start script exists:
+  npm run
+
+Should list "start" in the scripts
+
+
+AFTER FILES ARE COPIED:
+================================================================================
+
+1. Install dependencies:
+   npm install
+
+2. Generate Prisma client:
+   npm run db:generate
+
+3. Verify .env file exists:
+   type .env
+
+   If not, create it with:
+   DATABASE_URL=postgresql://user:pass@host:5432/munshijee
+   NEXTAUTH_URL=https://munshijee.ideageek.pk
+   NEXTAUTH_SECRET=your-secret-key
+   NODE_ENV=production
+
+4. Start the application:
+   npm start
+
+5. Test in browser:
+   http://localhost:3000
+
+
+INSTALL AS WINDOWS SERVICE (RECOMMENDED):
+================================================================================
+
+After npm start works, install as service using NSSM:
+
+1. Download NSSM: https://nssm.cc/download
+2. Extract nssm.exe to C:\Windows\System32
+3. Run as Administrator:
+   
+   nssm install MunshiJee "C:\Program Files\nodejs\node.exe" 
+     "C:\inetpub\wwwroot\munshijee.ideageek.pk\node_modules\.bin\next" start
+   
+   nssm set MunshiJee AppDirectory C:\inetpub\wwwroot\munshijee.ideageek.pk
+   nssm start MunshiJee
+
+See: WINDOWS-DEPLOYMENT.md for details
+
+
+NEED MORE HELP?
+================================================================================
+
+See these files:
+- COPY-TO-PRODUCTION.md (complete copy instructions)
+- WINDOWS-DEPLOYMENT.md (Windows service setup)
+- BUILD-GUIDE.md (build instructions)
+
+Or verify deployment:
+  verify-deployment.bat
+
+================================================================================

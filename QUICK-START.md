@@ -57,6 +57,17 @@ npx prisma db seed
 ## 🎯 First Steps After Setup
 
 ### 1️⃣ Start Application
+
+**Using Makefile (Recommended):**
+```bash
+# Linux/Mac
+make deploy && make start
+
+# Windows
+make.bat deploy && make.bat start
+```
+
+**Or manually:**
 ```bash
 npm install
 npm run build

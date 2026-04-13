@@ -30,6 +30,7 @@ interface SubscriptionData {
     name: string;
     emailLimit: number;
     smsLimit: number;
+    price: number;
     isFree: boolean;
   };
   emailsUsed: number;

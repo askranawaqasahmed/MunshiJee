@@ -1,0 +1,133 @@
+================================================================================
+MunshiJee - Windows Quick Start (FIXING PM2 ERROR)
+================================================================================
+
+PROBLEM: PM2 EPERM Error on Windows
+------------------------------------
+PM2 has permission issues on Windows with named pipes.
+
+
+IMMEDIATE SOLUTION (EASIEST)
+-----------------------------
+
+Option 1: Just use npm start
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  npm start
+
+  ✓ Simple
+  ✓ Works immediately
+  ✗ Console window stays open
+
+
+Option 2: Run as Administrator
+  1. Right-click PowerShell → "Run as Administrator"
+  2. cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  3. pm2 start ecosystem.config.cjs
+
+  ✓ PM2 works
+  ✗ Requires admin rights
+
+
+Option 3: Use Windows Service (BEST FOR PRODUCTION)
+  1. Install NSSM from https://nssm.cc/download
+  2. Extract nssm.exe to C:\Windows\System32
+  3. Run as Administrator:
+     cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+     nssm install MunshiJee "C:\Program Files\nodejs\node.exe" 
+       "C:\inetpub\wwwroot\munshijee.ideageek.pk\node_modules\.bin\next" start
+     nssm set MunshiJee AppDirectory C:\inetpub\wwwroot\munshijee.ideageek.pk
+     nssm start MunshiJee
+
+  ✓ Runs as Windows Service
+  ✓ Auto-starts on boot
+  ✓ No console window
+  ✓ Professional solution
+
+
+Option 4: Use node-windows Package
+  1. npm install -g node-windows
+  2. node install-windows-service.js
+  3. Service installed!
+
+  ✓ Easy installation
+  ✓ Runs as service
+
+
+QUICK TEST
+----------
+To test if your app works:
+  1. cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  2. npm start
+  3. Open http://localhost:3000
+  4. If it works, proceed with service installation
+
+
+FOR PRODUCTION USE
+------------------
+Recommended: NSSM (Option 3)
+
+Steps:
+1. Download NSSM: https://nssm.cc/download
+2. Extract to C:\Windows\System32
+3. Open Command Prompt as Administrator
+4. Run these commands:
+
+cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+
+nssm install MunshiJee ^
+  "C:\Program Files\nodejs\node.exe" ^
+  "C:\inetpub\wwwroot\munshijee.ideageek.pk\node_modules\.bin\next" ^
+  start
+
+nssm set MunshiJee AppDirectory C:\inetpub\wwwroot\munshijee.ideageek.pk
+nssm set MunshiJee AppEnvironmentExtra NODE_ENV=production
+nssm start MunshiJee
+
+Done! Service is running.
+
+
+MANAGE THE SERVICE
+------------------
+Start:   nssm start MunshiJee
+Stop:    nssm stop MunshiJee
+Restart: nssm restart MunshiJee
+Status:  nssm status MunshiJee
+Remove:  nssm remove MunshiJee confirm
+
+
+CHECK IF RUNNING
+----------------
+Open browser: http://localhost:3000
+Or: http://your-server-ip:3000
+
+
+CHANGE PORT
+-----------
+If port 3000 is busy:
+  set PORT=8080
+  npm start
+
+Or with NSSM:
+  nssm set MunshiJee AppEnvironmentExtra PORT=8080
+
+
+TROUBLESHOOTING
+---------------
+"Port already in use":
+  netstat -ano | findstr :3000
+  taskkill /F /PID <process-id>
+
+"Cannot find module":
+  npm install
+  npm run build
+
+"Database connection failed":
+  Check .env file
+  Verify DATABASE_URL
+
+
+MORE HELP
+---------
+See: WINDOWS-DEPLOYMENT.md (detailed guide)
+
+================================================================================

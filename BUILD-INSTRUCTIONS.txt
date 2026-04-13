@@ -1,0 +1,108 @@
+================================================================================
+MunshiJee - Build Instructions
+================================================================================
+
+QUICK BUILD
+-----------
+
+Windows:
+  make.bat build
+
+Linux/Mac:
+  make build
+
+That's it! The build will be in the .next/ folder.
+
+
+FILES TO COPY FOR DEPLOYMENT
+-----------------------------
+
+Essential:
+  ✓ .next/              (entire folder - build output)
+  ✓ public/             (entire folder - static files)
+  ✓ package.json        (dependencies)
+  ✓ package-lock.json   (versions)
+
+Configuration (create on server):
+  ✓ .env                (environment variables)
+
+Optional:
+  □ node_modules/       (or run "npm install" on server)
+
+
+ON YOUR SERVER
+--------------
+
+1. Copy the files listed above
+
+2. Create .env file:
+   DATABASE_URL="postgresql://user:pass@host:5432/munshijee"
+   NEXTAUTH_URL="https://yourdomain.com"
+   NEXTAUTH_SECRET="your-secret-key"
+
+3. Install dependencies (if not copied):
+   npm install
+
+4. Start the server:
+   npm start
+
+5. Access at: http://your-server:3000
+
+
+DATABASE SETUP
+--------------
+
+Before deployment, setup database using DBeaver:
+- Open dbeaver-setup.sql in DBeaver
+- Execute the script
+- This creates tables, super admin, and subscription plans
+
+Super Admin Login:
+  Email: superadmin@munshijee.ideageek.pk
+  Password: admin123!@#
+
+
+OTHER COMMANDS
+--------------
+
+make.bat dev          - Start development (port 3000)
+make.bat clean        - Clean build files
+make.bat rebuild      - Clean and rebuild
+make.bat help         - Show all commands
+
+
+BUILD OUTPUT SIZE
+-----------------
+
+.next/           ~50-100 MB
+node_modules/    ~200-500 MB (if copying)
+public/          ~1-5 MB
+
+Total: ~250-600 MB
+
+
+TROUBLESHOOTING
+---------------
+
+Build fails:
+  make.bat clean
+  make.bat build
+
+Module not found:
+  npm install
+  make.bat build
+
+Test build locally:
+  make.bat build
+  npm start
+  Open http://localhost:3000
+
+
+NEED MORE HELP?
+---------------
+
+See BUILD-GUIDE.md for detailed instructions
+See DBEAVER-SETUP.md for database setup
+See README.md for complete documentation
+
+================================================================================

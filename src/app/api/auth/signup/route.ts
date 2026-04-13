@@ -23,7 +23,7 @@ async function getSuperAdminEmailSettings(): Promise<EmailConfig | null> {
     }
 
     return {
-      provider: providerSetting.value as "gmail" | "outlook" | "resend",
+      provider: providerSetting.value as "resend",
       config: configSetting.value as any,
     };
   } catch (error) {
@@ -65,7 +65,39 @@ export async function POST(req: Request) {
       },
     });
 
-    // Send welcome email via super admin's SMTP
+    // Auto-assign Free subscription plan
+    try {
+      const freePlan = await prisma.subscriptionPlan.findFirst({
+        where: { slug: 'FREE' },
+      });
+
+      if (freePlan) {
+        const startDate = new Date();
+        const endDate = new Date();
+        endDate.setDate(endDate.getDate() + 30);
+
+        await prisma.userSubscription.create({
+          data: {
+            userId: user.id,
+            planId: freePlan.id,
+            status: 'ACTIVE',
+            startDate,
+            endDate,
+            emailsUsed: 0,
+            smsUsed: 0,
+          },
+        });
+
+        console.log(`Free subscription assigned to user ${user.email}`);
+      } else {
+        console.warn('Free subscription plan not found in database');
+      }
+    } catch (subscriptionError) {
+      console.error('Failed to assign free subscription:', subscriptionError);
+      // Don't fail the signup if subscription assignment fails
+    }
+
+    // Send welcome email via super admin's email settings
     try {
       const emailSettings = await getSuperAdminEmailSettings();
       

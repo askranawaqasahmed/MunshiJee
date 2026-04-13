@@ -142,7 +142,7 @@ export function MarkPaidSheet({
                 placeholder="0.00"
               />
               <p className="text-sm text-muted-foreground">
-                Invoice Amount: ${invoiceAmount.toFixed(2)}
+                Invoice Amount: Rs.{invoiceAmount.toFixed(2)}
               </p>
             </div>
 

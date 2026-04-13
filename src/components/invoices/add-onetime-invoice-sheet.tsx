@@ -263,7 +263,7 @@ export function AddOneTimeInvoiceSheet({
                   <div className="space-y-2">
                     <Label>Total</Label>
                     <Input
-                      value={`$${item.total.toFixed(2)}`}
+                      value={`Rs.${item.total.toFixed(2)}`}
                       disabled
                       className="bg-gray-100"
                     />
@@ -278,7 +278,7 @@ export function AddOneTimeInvoiceSheet({
                   Total Amount
                 </div>
                 <div className="text-2xl font-bold">
-                  ${totalAmount.toFixed(2)}
+                  Rs.{totalAmount.toFixed(2)}
                 </div>
               </div>
             </div>

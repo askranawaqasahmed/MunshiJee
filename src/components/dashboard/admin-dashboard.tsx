@@ -51,13 +51,13 @@ export async function AdminDashboard({ userId }: AdminDashboardProps) {
     },
     {
       title: "Total Revenue",
-      value: `$${Number(totalRevenue._sum.amount || 0).toFixed(2)}`,
+      value: `Rs.${Number(totalRevenue._sum.amount || 0).toFixed(2)}`,
       icon: DollarSign,
       color: "text-purple-600",
     },
     {
       title: "Pending Payments",
-      value: `$${Number(pendingPayments._sum.amount || 0).toFixed(2)}`,
+      value: `Rs.${Number(pendingPayments._sum.amount || 0).toFixed(2)}`,
       icon: AlertCircle,
       color: "text-orange-600",
     },
@@ -115,7 +115,7 @@ export async function AdminDashboard({ userId }: AdminDashboardProps) {
                   </div>
                   <div className="flex justify-between sm:block sm:text-right">
                     <p className="font-medium text-sm sm:text-base">
-                      ${Number(invoice.amount).toFixed(2)}
+                      Rs.{Number(invoice.amount).toFixed(2)}
                     </p>
                     <p className="text-xs sm:text-sm text-muted-foreground">
                       {invoice.status}

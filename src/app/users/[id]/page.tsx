@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ArrowLeft, Mail, Phone, Calendar, DollarSign, FileText, Users, TrendingUp } from "lucide-react";
+import { SubscriptionManager } from "@/components/users/subscription-manager";
 
 export default async function UserDetailPage({
   params,
@@ -38,8 +39,8 @@ export default async function UserDetailPage({
     notFound();
   }
 
-  // Get detailed statistics
-  const [totalRevenue, pendingPayments, recentInvoices, customers] =
+  // Get detailed statistics and subscription data
+  const [totalRevenue, pendingPayments, recentInvoices, customers, currentSubscription, availablePlans] =
     await Promise.all([
       prisma.payment.aggregate({
         where: { userId: user.id },
@@ -68,6 +69,19 @@ export default async function UserDetailPage({
         where: { userId: user.id },
         orderBy: { createdAt: "desc" },
         take: 5,
+      }),
+      prisma.userSubscription.findFirst({
+        where: {
+          userId: user.id,
+          status: 'ACTIVE',
+        },
+        include: {
+          plan: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.subscriptionPlan.findMany({
+        orderBy: { price: 'asc' },
       }),
     ]);
 
@@ -129,6 +143,13 @@ export default async function UserDetailPage({
         </CardContent>
       </Card>
 
+      {/* Subscription Management */}
+      <SubscriptionManager
+        userId={user.id}
+        currentSubscription={currentSubscription}
+        availablePlans={availablePlans}
+      />
+
       {/* Statistics Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
@@ -140,7 +161,7 @@ export default async function UserDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${Number(totalRevenue._sum.amount || 0).toFixed(2)}
+              Rs.{Number(totalRevenue._sum.amount || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
               {user._count.payments} payments received
@@ -157,7 +178,7 @@ export default async function UserDetailPage({
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              ${Number(pendingPayments._sum.amount || 0).toFixed(2)}
+              Rs.{Number(pendingPayments._sum.amount || 0).toFixed(2)}
             </div>
             <p className="text-xs text-muted-foreground">
               Unpaid invoices
@@ -221,7 +242,7 @@ export default async function UserDetailPage({
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        ${invoice.amount.toFixed(2)}
+                        Rs.{invoice.amount.toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {invoice.status}

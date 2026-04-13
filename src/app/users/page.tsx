@@ -6,7 +6,8 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { Eye } from "lucide-react";
+import { Eye, Mail, MessageSquare } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export default async function UsersPage() {
   const session = await getServerSession(authOptions);
@@ -30,19 +31,32 @@ export default async function UsersPage() {
     },
   });
 
-  // Get total revenue for each user
+  // Get total revenue and subscription info for each user
   const usersWithRevenue = await Promise.all(
     users.map(async (user) => {
-      const revenue = await prisma.payment.aggregate({
-        where: { userId: user.id },
-        _sum: {
-          amount: true,
-        },
-      });
+      const [revenue, subscription] = await Promise.all([
+        prisma.payment.aggregate({
+          where: { userId: user.id },
+          _sum: {
+            amount: true,
+          },
+        }),
+        prisma.userSubscription.findFirst({
+          where: {
+            userId: user.id,
+            status: 'ACTIVE',
+          },
+          include: {
+            plan: true,
+          },
+          orderBy: { createdAt: 'desc' },
+        }),
+      ]);
 
       return {
         ...user,
         totalRevenue: revenue._sum.amount || 0,
+        subscription,
       };
     })
   );
@@ -70,50 +84,128 @@ export default async function UsersPage() {
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium">Name</th>
                     <th className="text-left p-3 font-medium">Email</th>
-                    <th className="text-left p-3 font-medium">Phone</th>
-                    <th className="text-left p-3 font-medium">
-                      Registration Date
+                    <th className="text-left p-3 font-medium">Plan</th>
+                    <th className="text-center p-3 font-medium">
+                      <Mail className="h-4 w-4 inline mr-1" />
+                      Email Left
                     </th>
+                    <th className="text-center p-3 font-medium">
+                      <MessageSquare className="h-4 w-4 inline mr-1" />
+                      SMS Left
+                    </th>
+                    <th className="text-center p-3 font-medium">Expiry Date</th>
                     <th className="text-right p-3 font-medium">Invoices</th>
-                    <th className="text-right p-3 font-medium">Customers</th>
-                    <th className="text-right p-3 font-medium">
-                      Total Revenue
-                    </th>
+                    <th className="text-right p-3 font-medium">Revenue</th>
                     <th className="text-center p-3 font-medium">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {usersWithRevenue.map((user) => (
-                    <tr key={user.id} className="border-b hover:bg-gray-50">
-                      <td className="p-3">{user.name}</td>
-                      <td className="p-3 text-sm text-gray-600">
-                        {user.email}
-                      </td>
-                      <td className="p-3 text-sm">
-                        {user.phoneNumber || "-"}
-                      </td>
-                      <td className="p-3 text-sm">
-                        {format(new Date(user.createdAt), "MMM dd, yyyy")}
-                      </td>
-                      <td className="p-3 text-right">
-                        {user._count.invoices}
-                      </td>
-                      <td className="p-3 text-right">
-                        {user._count.customers}
-                      </td>
-                      <td className="p-3 text-right font-medium">
-                        ${Number(user.totalRevenue).toFixed(2)}
-                      </td>
-                      <td className="p-3 text-center">
-                        <Link href={`/users/${user.id}`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            View
-                          </Button>
-                        </Link>
-                      </td>
-                    </tr>
-                  ))}
+                  {usersWithRevenue.map((user) => {
+                    const emailLeft = user.subscription 
+                      ? user.subscription.plan.emailLimit - user.subscription.emailsUsed 
+                      : 0;
+                    const smsLeft = user.subscription 
+                      ? user.subscription.plan.smsLimit - user.subscription.smsUsed 
+                      : 0;
+                    
+                    return (
+                      <tr key={user.id} className="border-b hover:bg-gray-50">
+                        <td className="p-3">
+                          <div>
+                            <p className="font-medium">{user.name}</p>
+                            <p className="text-xs text-gray-500">
+                              {format(new Date(user.createdAt), "MMM dd, yyyy")}
+                            </p>
+                          </div>
+                        </td>
+                        <td className="p-3 text-sm text-gray-600">
+                          {user.email}
+                        </td>
+                        <td className="p-3">
+                          {user.subscription ? (
+                            <div>
+                              <Badge variant={user.subscription.plan.isFree ? 'secondary' : 'default'}>
+                                {user.subscription.plan.name}
+                              </Badge>
+                              <p className="text-xs text-gray-500 mt-1">
+                                Rs.{Number(user.subscription.plan.price).toFixed(0)}/mo
+                              </p>
+                            </div>
+                          ) : (
+                            <Badge variant="destructive">No Plan</Badge>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {user.subscription ? (
+                            <div>
+                              <p className={`font-semibold ${
+                                emailLeft <= 2 ? 'text-red-600' : 'text-green-600'
+                              }`}>
+                                {emailLeft}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                of {user.subscription.plan.emailLimit}
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {user.subscription ? (
+                            user.subscription.plan.smsLimit > 0 ? (
+                              <div>
+                                <p className={`font-semibold ${
+                                  smsLeft <= 2 ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {smsLeft}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  of {user.subscription.plan.smsLimit}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">N/A</span>
+                            )
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {user.subscription ? (
+                            <div>
+                              <p className={`text-sm font-medium ${
+                                new Date(user.subscription.endDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                                  ? 'text-red-600'
+                                  : 'text-gray-900'
+                              }`}>
+                                {format(new Date(user.subscription.endDate), "MMM dd, yyyy")}
+                              </p>
+                              {new Date(user.subscription.endDate) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) && (
+                                <p className="text-xs text-red-600">Expiring soon</p>
+                              )}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-right">
+                          {user._count.invoices}
+                        </td>
+                        <td className="p-3 text-right font-medium">
+                          Rs.{Number(user.totalRevenue).toFixed(2)}
+                        </td>
+                        <td className="p-3 text-center">
+                          <Link href={`/users/${user.id}`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-1" />
+                              View
+                            </Button>
+                          </Link>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

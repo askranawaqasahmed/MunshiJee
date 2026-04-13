@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 
 const menuItems = [
   {
-    title: "Super Admin",
+    title: "Dashboard",
     icon: LayoutDashboard,
     href: "/admin",
   },
@@ -27,6 +27,11 @@ const menuItems = [
     title: "User Management",
     icon: Users,
     href: "/users",
+  },
+  {
+    title: "Subscriptions",
+    icon: CreditCard,
+    href: "/admin/subscriptions",
   },
   {
     title: "Settings",
@@ -79,7 +84,10 @@ export function AdminSidebar({ mobileOpen, onMobileClose }: AdminSidebarProps) {
         <nav className="flex-1 space-y-1 p-4">
           {menuItems.map((item) => {
             const Icon = item.icon;
-            const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+            const isActive = 
+              item.href === "/admin" 
+                ? pathname === "/admin"
+                : pathname === item.href || pathname.startsWith(item.href + "/");
             
             return (
               <Link

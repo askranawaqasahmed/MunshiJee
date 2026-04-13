@@ -206,7 +206,7 @@ export default async function SuperAdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${totalRevenue._sum.amount?.toFixed(2) || "0.00"}
+                Rs.{totalRevenue._sum.amount?.toFixed(2) || "0.00"}
               </div>
               <p className="text-xs text-muted-foreground">
                 All payments received
@@ -223,7 +223,7 @@ export default async function SuperAdminDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${pendingPayments._sum.amount?.toFixed(2) || "0.00"}
+                Rs.{pendingPayments._sum.amount?.toFixed(2) || "0.00"}
               </div>
               <p className="text-xs text-muted-foreground">
                 Unpaid invoices
@@ -310,7 +310,7 @@ export default async function SuperAdminDashboard() {
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        ${invoice.amount.toFixed(2)}
+                        Rs.{invoice.amount.toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {invoice.status}

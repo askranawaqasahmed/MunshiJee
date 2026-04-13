@@ -12,6 +12,13 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
       include: {
         customer: true,
         items: true,
+        user: {
+          select: {
+            id: true,
+            emailNotificationsEnabled: true,
+            smsNotificationsEnabled: true,
+          },
+        },
       },
     });
 
@@ -19,38 +26,79 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
       throw new Error(`Invoice ${invoiceId} not found`);
     }
 
+    const activeSubscription = await prisma.userSubscription.findFirst({
+      where: {
+        userId: invoice.userId,
+        status: 'ACTIVE',
+        endDate: { gte: new Date() },
+      },
+      include: {
+        plan: true,
+      },
+    });
+
+    if (!activeSubscription) {
+      console.warn(`User ${invoice.userId} has no active subscription. Skipping notifications.`);
+      return;
+    }
+
+    const emailSettings = await getEmailSettings(null);
+    const smsSettings = await getSmsSettings(null);
+
     const pdfToken = generatePdfToken(invoiceId);
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
     const pdfDownloadUrl = `${baseUrl}/api/invoices/pdf/${pdfToken}`;
 
-    // Get settings for the user who owns this invoice
-    const emailSettings = await getEmailSettings(invoice.userId);
-    const smsSettings = await getSmsSettings(invoice.userId);
-
     const invoiceData = {
       customerName: invoice.customer.name,
       invoiceNumber: invoice.invoiceNumber,
-      amount: `$${invoice.amount.toFixed(2)}`,
+      amount: `Rs.${invoice.amount.toFixed(2)}`,
       dueDate: format(new Date(invoice.dueDate), 'MMM dd, yyyy'),
       pdfDownloadUrl,
     };
 
-    if (emailSettings && invoice.customer.email) {
+    if (
+      invoice.user.emailNotificationsEnabled &&
+      emailSettings &&
+      invoice.customer.email &&
+      activeSubscription.emailsUsed < activeSubscription.plan.emailLimit
+    ) {
       await sendEmailNotification(
         invoiceId,
         invoice.customer.email,
         emailSettings,
-        invoiceData
+        invoiceData,
+        activeSubscription.id
       );
+    } else if (invoice.user.emailNotificationsEnabled && activeSubscription.emailsUsed >= activeSubscription.plan.emailLimit) {
+      console.warn(`User ${invoice.userId} has reached email quota limit. Auto-disabling email notifications.`);
+      
+      await prisma.user.update({
+        where: { id: invoice.userId },
+        data: { emailNotificationsEnabled: false },
+      });
     }
 
-    if (smsSettings && invoice.customer.phone) {
+    if (
+      invoice.user.smsNotificationsEnabled &&
+      smsSettings &&
+      invoice.customer.phone &&
+      activeSubscription.smsUsed < activeSubscription.plan.smsLimit
+    ) {
       await sendSmsNotification(
         invoiceId,
         invoice.customer.phone,
         smsSettings,
-        invoiceData
+        invoiceData,
+        activeSubscription.id
       );
+    } else if (invoice.user.smsNotificationsEnabled && activeSubscription.smsUsed >= activeSubscription.plan.smsLimit) {
+      console.warn(`User ${invoice.userId} has reached SMS quota limit. Auto-disabling SMS notifications.`);
+      
+      await prisma.user.update({
+        where: { id: invoice.userId },
+        data: { smsNotificationsEnabled: false },
+      });
     }
   } catch (error) {
     console.error('Error sending invoice notification:', error);
@@ -67,7 +115,8 @@ async function sendEmailNotification(
     amount: string;
     dueDate: string;
     pdfDownloadUrl: string;
-  }
+  },
+  subscriptionId: string
 ): Promise<void> {
   const logId = await createNotificationLog({
     invoiceId,
@@ -87,6 +136,11 @@ async function sendEmailNotification(
     });
 
     await updateNotificationLog(logId, 'SENT', null);
+    
+    await prisma.userSubscription.update({
+      where: { id: subscriptionId },
+      data: { emailsUsed: { increment: 1 } },
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     await updateNotificationLog(logId, 'FAILED', errorMessage);
@@ -104,7 +158,8 @@ async function sendSmsNotification(
     amount: string;
     dueDate: string;
     pdfDownloadUrl: string;
-  }
+  },
+  subscriptionId: string
 ): Promise<void> {
   const logId = await createNotificationLog({
     invoiceId,
@@ -124,6 +179,11 @@ async function sendSmsNotification(
     });
 
     await updateNotificationLog(logId, 'SENT', null);
+    
+    await prisma.userSubscription.update({
+      where: { id: subscriptionId },
+      data: { smsUsed: { increment: 1 } },
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     await updateNotificationLog(logId, 'FAILED', errorMessage);
@@ -187,7 +247,7 @@ export async function getEmailSettings(userId: string | null = null): Promise<Em
     }
 
     return {
-      provider: providerSetting.value as 'gmail' | 'outlook' | 'resend',
+      provider: providerSetting.value as 'resend',
       config: configSetting.value as any,
     };
   } catch (error) {

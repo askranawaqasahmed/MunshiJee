@@ -1,23 +1,4 @@
-import nodemailer from 'nodemailer';
 import { Resend } from 'resend';
-
-export interface GmailConfig {
-  email: string;
-  password: string;
-  fromName: string;
-  host?: string;
-  port?: number;
-  secure?: boolean;
-}
-
-export interface OutlookConfig {
-  email: string;
-  password: string;
-  fromName: string;
-  host?: string;
-  port?: number;
-  secure?: boolean;
-}
 
 export interface ResendConfig {
   apiKey: string;
@@ -25,11 +6,9 @@ export interface ResendConfig {
   fromName: string;
 }
 
-export type EmailProviderConfig = GmailConfig | OutlookConfig | ResendConfig;
-
 export interface EmailConfig {
-  provider: 'gmail' | 'outlook' | 'resend';
-  config: EmailProviderConfig;
+  provider: 'resend';
+  config: ResendConfig;
 }
 
 export interface EmailPayload {
@@ -42,62 +21,14 @@ export class EmailService {
   constructor(private emailConfig: EmailConfig) {}
 
   async send(payload: EmailPayload): Promise<void> {
-    switch (this.emailConfig.provider) {
-      case 'gmail':
-        return this.sendWithGmail(payload);
-      case 'outlook':
-        return this.sendWithOutlook(payload);
-      case 'resend':
-        return this.sendWithResend(payload);
-      default:
-        throw new Error(`Unsupported email provider: ${this.emailConfig.provider}`);
+    if (this.emailConfig.provider !== 'resend') {
+      throw new Error(`Unsupported email provider: ${this.emailConfig.provider}`);
     }
-  }
-
-  private async sendWithGmail(payload: EmailPayload): Promise<void> {
-    const config = this.emailConfig.config as GmailConfig;
-
-    const transporter = nodemailer.createTransport({
-      host: config.host || 'smtp.gmail.com',
-      port: config.port || 587,
-      secure: config.secure !== undefined ? config.secure : false,
-      auth: {
-        user: config.email,
-        pass: config.password,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"${config.fromName}" <${config.email}>`,
-      to: payload.to,
-      subject: payload.subject,
-      html: payload.html,
-    });
-  }
-
-  private async sendWithOutlook(payload: EmailPayload): Promise<void> {
-    const config = this.emailConfig.config as OutlookConfig;
-
-    const transporter = nodemailer.createTransport({
-      host: config.host || 'smtp-mail.outlook.com',
-      port: config.port || 587,
-      secure: config.secure !== undefined ? config.secure : false,
-      auth: {
-        user: config.email,
-        pass: config.password,
-      },
-    });
-
-    await transporter.sendMail({
-      from: `"${config.fromName}" <${config.email}>`,
-      to: payload.to,
-      subject: payload.subject,
-      html: payload.html,
-    });
+    return this.sendWithResend(payload);
   }
 
   private async sendWithResend(payload: EmailPayload): Promise<void> {
-    const config = this.emailConfig.config as ResendConfig;
+    const config = this.emailConfig.config;
 
     const resend = new Resend(config.apiKey);
 

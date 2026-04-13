@@ -52,6 +52,20 @@ enum NotificationStatus {
   FAILED
 }
 
+enum SubscriptionPlanType {
+  FREE
+  STARTER
+  GROWTH
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -59,6 +73,8 @@ model User {
   password    String
   phoneNumber String?
   role        Role     @default(USER)
+  emailNotificationsEnabled Boolean @default(true)
+  smsNotificationsEnabled   Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -67,6 +83,7 @@ model User {
   sales         Sale[]
   payments      Payment[]
   settings      Settings[]
+  subscriptions UserSubscription[]
 
   @@index([email])
   @@index([role])
@@ -207,4 +224,42 @@ model NotificationLog {
   @@index([invoiceId])
   @@index([status])
   @@index([createdAt])
+}
+
+model SubscriptionPlan {
+  id          String               @id @default(cuid())
+  name        String
+  slug        SubscriptionPlanType @unique
+  emailLimit  Int
+  smsLimit    Int
+  price       Decimal              @db.Decimal(10, 2)
+  description String?              @db.Text
+  isFree      Boolean              @default(false)
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+
+  subscriptions UserSubscription[]
+
+  @@index([slug])
+}
+
+model UserSubscription {
+  id         String             @id @default(cuid())
+  userId     String
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId     String
+  plan       SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  status     SubscriptionStatus @default(ACTIVE)
+  startDate  DateTime           @default(now())
+  endDate    DateTime
+  emailsUsed Int                @default(0)
+  smsUsed    Int                @default(0)
+  assignedBy String?
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+  @@index([endDate])
 }

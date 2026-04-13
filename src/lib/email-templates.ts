@@ -377,7 +377,7 @@ export function getWelcomeEmailTemplate(data: WelcomeEmailData): string {
         <li>Track customers and their payment history</li>
         <li>Record sales and generate invoices from sales data</li>
         <li>Send professional invoice emails to your customers</li>
-        <li>Configure your own SMTP settings for email delivery</li>
+        <li>Configure your email settings for delivery via Resend</li>
         <li>Monitor payments and track overdue invoices</li>
       </ul>
       

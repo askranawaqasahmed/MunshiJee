@@ -50,67 +50,96 @@ export async function PUT(request: NextRequest) {
     const { emailProvider, emailConfig, smsProvider, smsConfig } = body;
 
     if (emailProvider && emailConfig) {
-      await prisma.settings.upsert({
+      // Check if settings exist
+      const existingProviderSetting = await prisma.settings.findFirst({
         where: { 
-          key_userId: {
-            key: 'email_provider',
-            userId: userId as string,
-          }
-        },
-        update: { value: emailProvider },
-        create: { 
-          key: 'email_provider', 
-          value: emailProvider,
-          userId: userId as string,
-        },
+          key: 'email_provider',
+          userId: userId,
+        }
       });
 
-      await prisma.settings.upsert({
+      if (existingProviderSetting) {
+        await prisma.settings.update({
+          where: { id: existingProviderSetting.id },
+          data: { value: emailProvider },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'email_provider', 
+            value: emailProvider,
+            userId: userId,
+          },
+        });
+      }
+
+      const existingConfigSetting = await prisma.settings.findFirst({
         where: { 
-          key_userId: {
-            key: 'email_config',
-            userId: userId as string,
-          }
-        },
-        update: { value: emailConfig },
-        create: { 
-          key: 'email_config', 
-          value: emailConfig,
-          userId: userId as string,
-        },
+          key: 'email_config',
+          userId: userId,
+        }
       });
+
+      if (existingConfigSetting) {
+        await prisma.settings.update({
+          where: { id: existingConfigSetting.id },
+          data: { value: emailConfig },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'email_config', 
+            value: emailConfig,
+            userId: userId,
+          },
+        });
+      }
     }
 
     if (smsProvider && smsConfig) {
-      await prisma.settings.upsert({
+      const existingProviderSetting = await prisma.settings.findFirst({
         where: { 
-          key_userId: {
-            key: 'sms_provider',
-            userId: userId as string,
-          }
-        },
-        update: { value: smsProvider },
-        create: { 
-          key: 'sms_provider', 
-          value: smsProvider,
-          userId: userId as string,
-        },
+          key: 'sms_provider',
+          userId: userId,
+        }
       });
 
-      await prisma.settings.upsert({
+      if (existingProviderSetting) {
+        await prisma.settings.update({
+          where: { id: existingProviderSetting.id },
+          data: { value: smsProvider },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'sms_provider', 
+            value: smsProvider,
+            userId: userId,
+          },
+        });
+      }
+
+      const existingConfigSetting = await prisma.settings.findFirst({
         where: { 
-          key_userId: {
-            key: 'sms_config',
-            userId: userId as string,
-          }
-        },
-        update: { value: smsConfig },
-        create: { 
-          key: 'sms_config', 
-          value: smsConfig,
-          userId: userId as string,
-        },
+          key: 'sms_config',
+          userId: userId,
+        }
       });
+
+      if (existingConfigSetting) {
+        await prisma.settings.update({
+          where: { id: existingConfigSetting.id },
+          data: { value: smsConfig },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'sms_config', 
+            value: smsConfig,
+            userId: userId,
+          },
+        });
+      }
     }
 
     return NextResponse.json({ success: true });

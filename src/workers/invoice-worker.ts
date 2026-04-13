@@ -86,6 +86,63 @@ async function processRecurringInvoices() {
   console.log("Recurring invoice processing complete");
 }
 
+async function processSubscriptionExpiry() {
+  console.log("Processing subscription expiry and renewal...");
+
+  const now = new Date();
+
+  const expiredSubscriptions = await prisma.userSubscription.findMany({
+    where: {
+      status: "ACTIVE",
+      endDate: {
+        lt: now,
+      },
+    },
+    include: {
+      plan: true,
+    },
+  });
+
+  console.log(`Found ${expiredSubscriptions.length} expired subscriptions`);
+
+  for (const subscription of expiredSubscriptions) {
+    try {
+      if (subscription.plan.isFree) {
+        // Renew free subscriptions automatically
+        const newEndDate = new Date(subscription.endDate);
+        newEndDate.setDate(newEndDate.getDate() + 30);
+
+        await prisma.userSubscription.update({
+          where: { id: subscription.id },
+          data: { 
+            emailsUsed: 0,
+            smsUsed: 0,
+            startDate: subscription.endDate,
+            endDate: newEndDate,
+          },
+        });
+
+        console.log(`Renewed free subscription ${subscription.id} with reset quotas`);
+      } else {
+        // Mark paid subscriptions as expired
+        await prisma.userSubscription.update({
+          where: { id: subscription.id },
+          data: { status: "EXPIRED" },
+        });
+
+        console.log(`Marked paid subscription ${subscription.id} as EXPIRED`);
+      }
+    } catch (error) {
+      console.error(
+        `Error processing subscription ${subscription.id}:`,
+        error
+      );
+    }
+  }
+
+  console.log("Subscription expiry and renewal processing complete");
+}
+
 if (connection) {
   const recurringInvoicesWorker = new Worker(
     "recurring-invoices",
@@ -119,4 +176,6 @@ if (connection) {
 setInterval(async () => {
   console.log("Running scheduled recurring invoice check...");
   await processRecurringInvoices();
+  console.log("Running scheduled subscription expiry check...");
+  await processSubscriptionExpiry();
 }, 24 * 60 * 60 * 1000);

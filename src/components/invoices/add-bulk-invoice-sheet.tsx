@@ -193,7 +193,7 @@ export function AddBulkInvoiceSheet({
                           </div>
                         </div>
                         <div className="font-semibold">
-                          ${Number(sale.amount).toFixed(2)}
+                          Rs.{Number(sale.amount).toFixed(2)}
                         </div>
                       </div>
                     ))}
@@ -203,7 +203,7 @@ export function AddBulkInvoiceSheet({
                           Total Amount
                         </div>
                         <div className="text-2xl font-bold">
-                          ${totalAmount.toFixed(2)}
+                          Rs.{totalAmount.toFixed(2)}
                         </div>
                       </div>
                     </div>

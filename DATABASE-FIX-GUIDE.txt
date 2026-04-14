@@ -1,0 +1,251 @@
+================================================================================
+DATABASE ERROR FIX - "Table public.User does not exist"
+================================================================================
+
+ERROR MESSAGE:
+  "The table `public.User` does not exist in the current database"
+
+CAUSE:
+  Prisma can't find the database tables. This happens when:
+  1. Tables weren't created (dbeaver-setup.sql not run)
+  2. DATABASE_URL points to wrong database
+  3. Prisma client is stale/outdated
+
+
+QUICK FIX (3 Steps)
+================================================================================
+
+Step 1: Verify Your DATABASE_URL
+---------------------------------
+
+On IIS server, check: C:\inetpub\wwwroot\munshijee.ideageek.pk\.env
+
+Should look like:
+  DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/munshijee?schema=public"
+
+Make sure:
+  ✓ Database name is: munshijee
+  ✓ Password is correct
+  ✓ Host is correct (localhost if PostgreSQL is on same server)
+
+
+Step 2: Check if Tables Exist
+------------------------------
+
+In DBeaver:
+  1. Connect to your PostgreSQL server
+  2. Expand: localhost → Databases → munshijee → Schemas → public → Tables
+  3. Look for table called: User (capital U)
+
+If you see tables like:
+  - User
+  - Customer
+  - Invoice
+  - SubscriptionPlan
+  - etc.
+
+Then tables exist! Skip to Step 3.
+
+If NO tables exist, continue to "Create Tables" section below.
+
+
+Step 3: Regenerate Prisma Client
+---------------------------------
+
+On IIS server:
+  cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+  npx prisma generate --schema=./src/prisma/schema.prisma
+
+Or run:
+  fix-database-issue.bat
+
+
+CREATE TABLES (If They Don't Exist)
+================================================================================
+
+Option 1: Using DBeaver (Recommended)
+--------------------------------------
+
+1. Open DBeaver
+2. Connect to your PostgreSQL server
+3. Select database: munshijee
+4. Open SQL Editor (Ctrl + ])
+5. Open file: dbeaver-setup.sql
+6. Click "Execute SQL Statement" (Ctrl + Enter)
+7. Wait for completion (should create ~10 tables)
+
+Verify:
+  Refresh database → Schemas → public → Tables
+  Should now see User, Customer, Invoice, etc.
+
+
+Option 2: Using psql Command Line
+----------------------------------
+
+cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+psql -U postgres -d munshijee -f dbeaver-setup.sql
+
+Enter password when prompted.
+
+
+Option 3: Manual SQL (If dbeaver-setup.sql is missing)
+-------------------------------------------------------
+
+Run this in DBeaver SQL Editor:
+
+-- 1. Create enums
+CREATE TYPE "Role" AS ENUM ('SUPER_ADMIN', 'USER');
+CREATE TYPE "SubscriptionPlanType" AS ENUM ('FREE', 'STARTER', 'GROWTH', 'PROFESSIONAL', 'ENTERPRISE');
+CREATE TYPE "SubscriptionStatus" AS ENUM ('ACTIVE', 'EXPIRED', 'CANCELLED');
+
+-- 2. Create User table
+CREATE TABLE "User" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "password" TEXT NOT NULL,
+    "phoneNumber" TEXT,
+    "role" "Role" NOT NULL DEFAULT 'USER',
+    "emailNotificationsEnabled" BOOLEAN NOT NULL DEFAULT true,
+    "smsNotificationsEnabled" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "User_pkey" PRIMARY KEY ("id")
+);
+
+-- 3. Create other tables...
+-- (See dbeaver-setup.sql for complete script)
+
+
+AFTER CREATING TABLES
+================================================================================
+
+1. Regenerate Prisma client:
+   cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+   npx prisma generate --schema=./src/prisma/schema.prisma
+
+2. Restart the application:
+   npm start
+
+3. Test in browser:
+   http://localhost:3000
+
+
+VERIFY EVERYTHING WORKS
+================================================================================
+
+Run check-database.sql in DBeaver:
+
+Should show:
+  ✓ Database: munshijee
+  ✓ Tables: User, Customer, Invoice, etc. (10+ tables)
+  ✓ Super admin exists: 1 row
+  ✓ Subscription plans: 5 rows
+
+
+TROUBLESHOOTING
+================================================================================
+
+Issue: "database does not exist"
+Fix:
+  CREATE DATABASE munshijee;
+  Then run dbeaver-setup.sql
+
+
+Issue: "role postgres does not exist"
+Fix:
+  Use correct PostgreSQL username
+  Update DATABASE_URL in .env
+
+
+Issue: "permission denied"
+Fix:
+  Grant permissions:
+  GRANT ALL PRIVILEGES ON DATABASE munshijee TO postgres;
+
+
+Issue: "Prisma client not found"
+Fix:
+  npm install
+  npx prisma generate --schema=./src/prisma/schema.prisma
+
+
+Issue: "Connection refused"
+Fix:
+  - Check PostgreSQL is running
+  - Check port (default 5432)
+  - Check firewall
+
+
+COMMON MISTAKES
+================================================================================
+
+1. Wrong database name in DATABASE_URL
+   ✗ munshije (typo)
+   ✓ munshijee
+
+2. Wrong schema
+   ✗ DATABASE_URL="...?schema=test"
+   ✓ DATABASE_URL="...?schema=public"
+
+3. Tables in wrong schema
+   Check: SELECT table_schema, table_name FROM information_schema.tables WHERE table_name='User';
+   Should be: public
+
+4. Case sensitivity
+   PostgreSQL is case-sensitive for table names
+   Table must be: "User" (capital U, with quotes)
+   Not: user or USER
+
+
+AUTOMATED FIX
+================================================================================
+
+Run this on IIS server:
+  fix-database-issue.bat
+
+This will:
+  ✓ Check .env file
+  ✓ Test database connection
+  ✓ Regenerate Prisma client
+  ✓ Guide you through verification
+
+
+COMPLETE CHECKLIST
+================================================================================
+
+□ Database 'munshijee' exists
+□ DATABASE_URL in .env is correct
+□ Tables exist (run check-database.sql)
+□ If no tables, run dbeaver-setup.sql
+□ Prisma client regenerated
+□ npm start works without errors
+□ Can open http://localhost:3000
+□ Can login as superadmin@munshijee.ideageek.pk
+
+
+NEED MORE HELP?
+================================================================================
+
+1. Run: check-database.sql in DBeaver
+   Shows: current state of database
+
+2. Run: fix-database-issue.bat on server
+   Fixes: Prisma client issues
+
+3. If tables don't exist:
+   Run: dbeaver-setup.sql in DBeaver
+
+4. Check logs for more details
+   Location: Console where you ran npm start
+
+
+SUPER ADMIN CREDENTIALS (After Setup)
+================================================================================
+
+Email: superadmin@munshijee.ideageek.pk
+Password: admin123!@#
+
+(Created by dbeaver-setup.sql)
+
+================================================================================

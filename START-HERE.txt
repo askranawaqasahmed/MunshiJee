@@ -1,0 +1,158 @@
+================================================================================
+                        START HERE - Quick Fix
+================================================================================
+
+YOU'RE GETTING: "Table public.User does not exist"
+
+THIS MEANS: Database tables weren't created
+
+
+IMMEDIATE FIX (Choose One)
+================================================================================
+
+Option A: On IIS Server (Quickest)
+-----------------------------------
+1. cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+2. fix-database-issue.bat
+
+Then in DBeaver:
+3. Open check-database.sql
+4. Run it - shows if tables exist
+5. If no tables, open dbeaver-setup.sql
+6. Run it - creates all tables
+
+
+Option B: DBeaver Only
+-----------------------
+1. Open DBeaver
+2. Connect to: localhost → munshijee database
+3. Open: dbeaver-setup.sql
+4. Execute (Ctrl + Enter)
+5. Wait ~10 seconds
+6. Done - tables created!
+
+Then on IIS server:
+7. cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+8. npx prisma generate --schema=./src/prisma/schema.prisma
+9. npm start
+
+
+VERIFY IT WORKED
+================================================================================
+
+In DBeaver:
+  Look at: munshijee → Schemas → public → Tables
+  
+  You should see:
+    ✓ User
+    ✓ Customer  
+    ✓ Invoice
+    ✓ SubscriptionPlan
+    ✓ UserSubscription
+    ✓ (and more...)
+
+
+WHY THIS HAPPENED
+================================================================================
+
+You created the database manually but didn't create the TABLES.
+
+Database = Container
+Tables = Actual data structure
+
+You have:  ✓ Database (munshijee)
+You need:  ✓ Tables (User, Customer, etc.)
+
+Solution: Run dbeaver-setup.sql
+
+
+COMPLETE STEP-BY-STEP
+================================================================================
+
+1. Open DBeaver
+   
+2. Connect to PostgreSQL
+   
+3. Select database: munshijee
+   
+4. Open SQL Editor (Ctrl + ])
+   
+5. Open file: C:\inetpub\wwwroot\munshijee.ideageek.pk\dbeaver-setup.sql
+   
+6. Click "Execute SQL Statement" (big play button or Ctrl + Enter)
+   
+7. Wait for completion message
+   
+8. Refresh database tree (F5)
+   
+9. Check: Schemas → public → Tables
+   Should now see ~10 tables
+   
+10. On server command line:
+    cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+    npx prisma generate --schema=./src/prisma/schema.prisma
+    
+11. Start app:
+    npm start
+    
+12. Test:
+    http://localhost:3000
+    
+
+LOGIN CREDENTIALS (After Setup)
+================================================================================
+
+Email: superadmin@munshijee.ideageek.pk
+Password: admin123!@#
+
+
+WHAT DOES dbeaver-setup.sql DO?
+================================================================================
+
+Creates:
+  ✓ All database tables (User, Customer, Invoice, etc.)
+  ✓ All indexes for performance
+  ✓ All foreign key relationships
+  ✓ 5 subscription plans (Free, Starter, Growth, Professional, Enterprise)
+  ✓ Super admin account
+  ✓ All enums and types
+
+
+IF STILL NOT WORKING
+================================================================================
+
+See: DATABASE-FIX-GUIDE.txt (complete troubleshooting)
+
+Or check:
+  - DATABASE_URL in .env is correct
+  - PostgreSQL is running
+  - You're connected to correct database
+
+
+QUICK VERIFICATION SCRIPT
+================================================================================
+
+Run in DBeaver:
+
+  SELECT COUNT(*) FROM "User";
+  SELECT COUNT(*) FROM "SubscriptionPlan";
+  
+Should return:
+  User: 1 (super admin)
+  SubscriptionPlan: 5 (all plans)
+
+If errors = tables don't exist = run dbeaver-setup.sql
+
+
+NEED HELP?
+================================================================================
+
+1. First, try: fix-database-issue.bat
+2. Then check: check-database.sql in DBeaver
+3. If no tables: run dbeaver-setup.sql in DBeaver
+4. Read: DATABASE-FIX-GUIDE.txt for details
+
+
+================================================================================
+TL;DR: Open DBeaver, run dbeaver-setup.sql, then npm start
+================================================================================

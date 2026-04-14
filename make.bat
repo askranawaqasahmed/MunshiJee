@@ -11,6 +11,7 @@ if "%1"=="db-generate" goto db-generate
 if "%1"=="lint" goto lint
 if "%1"=="clean" goto clean
 if "%1"=="rebuild" goto rebuild
+if "%1"=="deploy-package" goto deploy-package
 goto help
 
 :help
@@ -19,17 +20,18 @@ echo MunshiJee - Build Commands
 echo ========================================
 echo.
 echo Essential:
-echo   make build        - Build for production (ready to copy)
-echo   make install      - Install dependencies
-echo   make dev          - Start development server
+echo   make build          - Build for production
+echo   make deploy-package - Create IIS deployment package
+echo   make install        - Install dependencies
+echo   make dev            - Start development server
 echo.
 echo Database:
-echo   make db-generate  - Generate Prisma client
+echo   make db-generate    - Generate Prisma client
 echo.
 echo Maintenance:
-echo   make clean        - Clean build files
-echo   make rebuild      - Clean and rebuild
-echo   make lint         - Run linter
+echo   make clean          - Clean build files
+echo   make rebuild        - Clean and rebuild
+echo   make lint           - Run linter
 echo.
 goto end
 
@@ -115,6 +117,15 @@ goto end
 call :clean
 call :build
 echo [92m✓ Rebuild complete[0m
+goto end
+
+:deploy-package
+echo ========================================
+echo Creating IIS Deployment Package
+echo ========================================
+call :build
+if %ERRORLEVEL% NEQ 0 goto end
+call create-deployment-package.bat
 goto end
 
 :end

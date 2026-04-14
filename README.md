@@ -103,9 +103,50 @@ A comprehensive invoicing and billing management system built with Next.js, Post
    - Open http://localhost:3000
    - Login with the admin credentials from your `.env` file
 
-## 🛠️ Build for Production
+## 🛠️ Simple Deployment (Copy & Paste to IIS)
 
-### Quick Build
+### Quick Deployment Package
+
+**Create a ready-to-deploy package:**
+```cmd
+# Windows
+make.bat deploy-package
+
+# Linux/Mac
+make deploy-package
+
+# Or manually
+create-deployment-package.bat
+```
+
+This creates a `deployment-package` folder with **everything** you need!
+
+### Deploy to IIS Server
+
+1. **Copy the folder:**
+   ```
+   Copy: deployment-package\
+   To: C:\inetpub\wwwroot\munshijee.ideageek.pk\
+   ```
+
+2. **On the server, run:**
+   ```cmd
+   cd C:\inetpub\wwwroot\munshijee.ideageek.pk
+   setup-production.bat
+   ```
+
+3. **Configure:**
+   - Rename `.env.example` to `.env`
+   - Edit with your database details
+   
+4. **Start:**
+   ```cmd
+   npm start
+   ```
+
+That's it! See [SIMPLE-IIS-DEPLOYMENT.md](./SIMPLE-IIS-DEPLOYMENT.md) for details.
+
+### Regular Build (Advanced)
 
 **Windows:**
 ```cmd
@@ -117,37 +158,17 @@ make.bat build
 make build
 ```
 
-This will:
-1. Install dependencies
-2. Generate Prisma client
-3. Build the Next.js application
-
-### Build Output
-
-After building, you'll have these files ready to copy:
-- `.next/` - Build output
-- `public/` - Static files  
-- `package.json` - Dependencies
-- `package-lock.json` - Lock file
-
-### Manual Build (without Makefile)
-```bash
-npm install
-npm run db:generate
-npm run build
-```
-
 ### Available Commands
 
 | Command | Description |
 |---------|-------------|
+| `make deploy-package` | Create IIS deployment package |
 | `make build` | Build for production |
 | `make install` | Install dependencies |
 | `make dev` | Start development server |
 | `make clean` | Clean build files |
-| `make rebuild` | Clean and rebuild |
 
-See [BUILD-GUIDE.md](./BUILD-GUIDE.md) for detailed instructions on copying files and deployment.
+See [BUILD-GUIDE.md](./BUILD-GUIDE.md) for advanced deployment options.
 
 ## 📦 Database Setup
 

@@ -1,7 +1,7 @@
 # MunshiJee - Makefile
 # Quick commands for building and development
 
-.PHONY: help install build dev clean db-generate lint
+.PHONY: help install build dev clean db-generate lint deploy-package
 
 # Default target - show help
 help:
@@ -10,16 +10,17 @@ help:
 	@echo "========================================"
 	@echo ""
 	@echo "Essential:"
-	@echo "  make build        - Build for production (ready to copy)"
-	@echo "  make install      - Install dependencies"
-	@echo "  make dev          - Start development server"
+	@echo "  make build          - Build for production"
+	@echo "  make deploy-package - Create IIS deployment package"
+	@echo "  make install        - Install dependencies"
+	@echo "  make dev            - Start development server"
 	@echo ""
 	@echo "Database:"
-	@echo "  make db-generate  - Generate Prisma client"
+	@echo "  make db-generate    - Generate Prisma client"
 	@echo ""
 	@echo "Maintenance:"
-	@echo "  make clean        - Clean build files"
-	@echo "  make lint         - Run linter"
+	@echo "  make clean          - Clean build files"
+	@echo "  make lint           - Run linter"
 	@echo ""
 
 # Install dependencies
@@ -78,3 +79,10 @@ clean:
 # Rebuild from scratch
 rebuild: clean build
 	@echo "✓ Rebuild complete"
+
+# Create deployment package for IIS
+deploy-package: build
+	@echo "========================================"
+	@echo "Creating IIS Deployment Package..."
+	@echo "========================================"
+	@./create-deployment-package.sh || echo "Run: create-deployment-package.bat (Windows)"

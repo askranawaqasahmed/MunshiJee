@@ -38,6 +38,7 @@ enum PaymentMethod {
   BANK_TRANSFER
   CHEQUE
   ONLINE
+  EASYPAISA
   OTHER
 }
 
@@ -66,6 +67,19 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum EasypaisaTransactionStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  BLOCKED
+}
+
+enum EasypaisaTransactionType {
+  MA
+  OTC
+}
+
 model User {
   id          String   @id @default(cuid())
   email       String   @unique
@@ -73,17 +87,19 @@ model User {
   password    String
   phoneNumber String?
   role        Role     @default(USER)
-  emailNotificationsEnabled Boolean @default(true)
-  smsNotificationsEnabled   Boolean @default(false)
+  emailNotificationsEnabled    Boolean @default(true)
+  smsNotificationsEnabled      Boolean @default(false)
+  whatsappNotificationsEnabled Boolean @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  customers     Customer[]
-  invoices      Invoice[]
-  sales         Sale[]
-  payments      Payment[]
-  settings      Settings[]
-  subscriptions UserSubscription[]
+  customers             Customer[]
+  invoices              Invoice[]
+  sales                 Sale[]
+  payments              Payment[]
+  settings              Settings[]
+  subscriptions         UserSubscription[]
+  easypaisaTransactions EasypaisaTransaction[]
 
   @@index([email])
   @@index([role])
@@ -101,9 +117,10 @@ model Customer {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  invoices Invoice[]
-  sales    Sale[]
-  payments Payment[]
+  invoices              Invoice[]
+  sales                 Sale[]
+  payments              Payment[]
+  easypaisaTransactions EasypaisaTransaction[]
 
   @@unique([userId, email])
   @@index([userId])
@@ -130,10 +147,11 @@ model Invoice {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  items    InvoiceItem[]
-  payments Payment[]
-  sales    Sale[]
-  notifications NotificationLog[]
+  items                 InvoiceItem[]
+  payments              Payment[]
+  sales                 Sale[]
+  notifications         NotificationLog[]
+  easypaisaTransactions EasypaisaTransaction[]
 
   @@index([userId])
   @@index([customerId])
@@ -227,16 +245,17 @@ model NotificationLog {
 }
 
 model SubscriptionPlan {
-  id          String               @id @default(cuid())
-  name        String
-  slug        SubscriptionPlanType @unique
-  emailLimit  Int
-  smsLimit    Int
-  price       Decimal              @db.Decimal(10, 2)
-  description String?              @db.Text
-  isFree      Boolean              @default(false)
-  createdAt   DateTime             @default(now())
-  updatedAt   DateTime             @updatedAt
+  id           String               @id @default(cuid())
+  name         String
+  slug         SubscriptionPlanType @unique
+  emailLimit   Int
+  smsLimit     Int
+  whatsappLimit Int                @default(0)
+  price        Decimal              @db.Decimal(10, 2)
+  description  String?              @db.Text
+  isFree       Boolean              @default(false)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
 
   subscriptions UserSubscription[]
 
@@ -244,22 +263,52 @@ model SubscriptionPlan {
 }
 
 model UserSubscription {
-  id         String             @id @default(cuid())
-  userId     String
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  planId     String
-  plan       SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
-  status     SubscriptionStatus @default(ACTIVE)
-  startDate  DateTime           @default(now())
-  endDate    DateTime
-  emailsUsed Int                @default(0)
-  smsUsed    Int                @default(0)
-  assignedBy String?
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
+  id           String             @id @default(cuid())
+  userId       String
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  planId       String
+  plan         SubscriptionPlan   @relation(fields: [planId], references: [id], onDelete: Cascade)
+  status       SubscriptionStatus @default(ACTIVE)
+  startDate    DateTime           @default(now())
+  endDate      DateTime
+  emailsUsed   Int                @default(0)
+  smsUsed      Int                @default(0)
+  whatsappUsed Int                @default(0)
+  assignedBy   String?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
 
   @@index([userId])
   @@index([planId])
   @@index([status])
   @@index([endDate])
+}
+
+model EasypaisaTransaction {
+  id                  String                      @id @default(cuid())
+  orderId             String                      @unique
+  invoiceId           String
+  invoice             Invoice                     @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User                        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  customerId          String
+  customer            Customer                    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  transactionType     EasypaisaTransactionType
+  amount              Decimal                     @db.Decimal(10, 2)
+  mobileAccountNo     String?
+  paymentToken        String?
+  storeId             String
+  status              EasypaisaTransactionStatus  @default(PENDING)
+  responseCode        String?
+  responseDesc        String?
+  transactionDateTime String?
+  tokenExpiryDateTime String?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+
+  @@index([invoiceId])
+  @@index([userId])
+  @@index([customerId])
+  @@index([status])
+  @@index([orderId])
 }

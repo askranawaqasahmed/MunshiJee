@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { EmailService, EmailConfig } from '@/lib/email-service';
 import { SmsService, SmsConfig } from '@/lib/sms-service';
+import { WhatsAppService, WhatsAppConfig } from '@/lib/whatsapp-service';
 import { getTestEmailTemplate } from '@/lib/email-templates';
 
 export async function POST(request: NextRequest) {
@@ -63,6 +64,33 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         success: true,
         message: 'Test SMS sent successfully',
+      });
+    } else if (type === 'whatsapp') {
+      const { phoneNumber } = body;
+      
+      if (!phoneNumber) {
+        return NextResponse.json(
+          { error: 'Phone number is required for WhatsApp test' },
+          { status: 400 }
+        );
+      }
+
+      const whatsappConfig = config as WhatsAppConfig;
+      const whatsappService = new WhatsAppService(whatsappConfig);
+
+      console.log('Testing WhatsApp with config:', {
+        provider: whatsappConfig.provider,
+        phoneNumber,
+      });
+
+      await whatsappService.send({
+        to: phoneNumber,
+        message: `Test message: You have received an invoice of Rs.1000.00 from ${session.user.name || 'MunshiJee'}. Download PDF: [test-link]`,
+      });
+
+      return NextResponse.json({
+        success: true,
+        message: 'Test WhatsApp message sent successfully',
       });
     }
 

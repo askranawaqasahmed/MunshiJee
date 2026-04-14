@@ -16,9 +16,9 @@ export async function PUT(
 
     const { id } = await params;
     const body = await request.json();
-    const { name, emailLimit, smsLimit, price, description } = body;
+    const { name, emailLimit, smsLimit, whatsappLimit, price, description } = body;
 
-    if (!name || emailLimit === undefined || smsLimit === undefined || price === undefined) {
+    if (!name || emailLimit === undefined || smsLimit === undefined || whatsappLimit === undefined || price === undefined) {
       return NextResponse.json(
         { error: 'Missing required fields' },
         { status: 400 }
@@ -31,6 +31,7 @@ export async function PUT(
         name,
         emailLimit: parseInt(emailLimit),
         smsLimit: parseInt(smsLimit),
+        whatsappLimit: parseInt(whatsappLimit),
         price: parseFloat(price),
         description,
       },

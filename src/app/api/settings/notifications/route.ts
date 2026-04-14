@@ -12,21 +12,31 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { emailNotificationsEnabled, smsNotificationsEnabled } = body;
+    const { emailNotificationsEnabled, smsNotificationsEnabled, whatsappNotificationsEnabled } = body;
 
-    if (typeof emailNotificationsEnabled !== 'boolean' || typeof smsNotificationsEnabled !== 'boolean') {
+    if (
+      typeof emailNotificationsEnabled !== 'boolean' || 
+      typeof smsNotificationsEnabled !== 'boolean' ||
+      (whatsappNotificationsEnabled !== undefined && typeof whatsappNotificationsEnabled !== 'boolean')
+    ) {
       return NextResponse.json(
         { error: 'Invalid request body' },
         { status: 400 }
       );
     }
 
+    const updateData: any = {
+      emailNotificationsEnabled,
+      smsNotificationsEnabled,
+    };
+
+    if (whatsappNotificationsEnabled !== undefined) {
+      updateData.whatsappNotificationsEnabled = whatsappNotificationsEnabled;
+    }
+
     await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        emailNotificationsEnabled,
-        smsNotificationsEnabled,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true });

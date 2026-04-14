@@ -21,6 +21,7 @@ interface Plan {
   name: string;
   emailLimit: number;
   smsLimit: number;
+  whatsappLimit?: number;
   price: number;
   description: string;
 }
@@ -36,6 +37,7 @@ export function EditPlanDialog({ plan, onSuccess }: EditPlanDialogProps) {
     name: plan.name,
     emailLimit: plan.emailLimit.toString(),
     smsLimit: plan.smsLimit.toString(),
+    whatsappLimit: (plan.whatsappLimit ?? 0).toString(),
     price: Number(plan.price).toString(),
     description: plan.description || '',
   });
@@ -48,6 +50,7 @@ export function EditPlanDialog({ plan, onSuccess }: EditPlanDialogProps) {
         name: plan.name,
         emailLimit: plan.emailLimit.toString(),
         smsLimit: plan.smsLimit.toString(),
+        whatsappLimit: (plan.whatsappLimit ?? 0).toString(),
         price: Number(plan.price).toString(),
         description: plan.description || '',
       });
@@ -117,7 +120,7 @@ export function EditPlanDialog({ plan, onSuccess }: EditPlanDialogProps) {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="emailLimit">Email Limit</Label>
                 <Input
@@ -138,6 +141,18 @@ export function EditPlanDialog({ plan, onSuccess }: EditPlanDialogProps) {
                   min="0"
                   value={formData.smsLimit}
                   onChange={(e) => setFormData({ ...formData, smsLimit: e.target.value })}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="whatsappLimit">WhatsApp Limit</Label>
+                <Input
+                  id="whatsappLimit"
+                  type="number"
+                  min="0"
+                  value={formData.whatsappLimit}
+                  onChange={(e) => setFormData({ ...formData, whatsappLimit: e.target.value })}
                   required
                 />
               </div>

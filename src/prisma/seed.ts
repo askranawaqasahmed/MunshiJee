@@ -12,6 +12,7 @@ async function main() {
     slug: SubscriptionPlanType;
     emailLimit: number;
     smsLimit: number;
+    whatsappLimit: number;
     price: number;
     description: string;
     isFree: boolean;
@@ -21,8 +22,9 @@ async function main() {
       slug: SubscriptionPlanType.FREE,
       emailLimit: 10,
       smsLimit: 0,
+      whatsappLimit: 10,
       price: 0,
-      description: "Free plan with 10 email notifications per month",
+      description: "Free plan with 10 email and 10 WhatsApp notifications per month",
       isFree: true,
     },
     {
@@ -30,8 +32,9 @@ async function main() {
       slug: SubscriptionPlanType.STARTER,
       emailLimit: 1000,
       smsLimit: 1000,
+      whatsappLimit: 1000,
       price: 20,
-      description: "1,000 emails and 1,000 SMS per month",
+      description: "1,000 emails, 1,000 SMS, and 1,000 WhatsApp messages per month",
       isFree: false,
     },
     {
@@ -39,8 +42,9 @@ async function main() {
       slug: SubscriptionPlanType.GROWTH,
       emailLimit: 5000,
       smsLimit: 5000,
+      whatsappLimit: 5000,
       price: 50,
-      description: "5,000 emails and 5,000 SMS per month",
+      description: "5,000 emails, 5,000 SMS, and 5,000 WhatsApp messages per month",
       isFree: false,
     },
     {
@@ -48,8 +52,9 @@ async function main() {
       slug: SubscriptionPlanType.PROFESSIONAL,
       emailLimit: 10000,
       smsLimit: 10000,
+      whatsappLimit: 10000,
       price: 100,
-      description: "10,000 emails and 10,000 SMS per month",
+      description: "10,000 emails, 10,000 SMS, and 10,000 WhatsApp messages per month",
       isFree: false,
     },
     {
@@ -57,8 +62,9 @@ async function main() {
       slug: SubscriptionPlanType.ENTERPRISE,
       emailLimit: 50000,
       smsLimit: 50000,
+      whatsappLimit: 50000,
       price: 1000,
-      description: "50,000 emails and 50,000 SMS per month",
+      description: "50,000 emails, 50,000 SMS, and 50,000 WhatsApp messages per month",
       isFree: false,
     },
   ];
@@ -70,6 +76,7 @@ async function main() {
         name: plan.name,
         emailLimit: plan.emailLimit,
         smsLimit: plan.smsLimit,
+        whatsappLimit: plan.whatsappLimit,
         price: plan.price,
         description: plan.description,
         isFree: plan.isFree,

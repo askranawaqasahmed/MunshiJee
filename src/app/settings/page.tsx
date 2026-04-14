@@ -11,6 +11,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { EmailSettingsForm } from '@/components/settings/email-settings-form';
 import { SmsSettingsForm } from '@/components/settings/sms-settings-form';
+import { EasypaisaSettingsForm } from '@/components/settings/easypaisa-settings-form';
+import { WhatsAppSettingsForm } from '@/components/settings/whatsapp-settings-form';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Mail, MessageSquare, Calendar, TrendingUp, Info } from 'lucide-react';
@@ -25,16 +27,28 @@ interface SmsSettings {
   config: any;
 }
 
+interface EasypaisaSettings {
+  provider: 'easypaisa';
+  config: any;
+}
+
+interface WhatsAppSettings {
+  provider: 'barty' | 'wati';
+  config: any;
+}
+
 interface SubscriptionData {
   plan: {
     name: string;
     emailLimit: number;
     smsLimit: number;
+    whatsappLimit: number;
     price: number;
     isFree: boolean;
   };
   emailsUsed: number;
   smsUsed: number;
+  whatsappUsed: number;
   status: string;
   endDate: string;
 }
@@ -44,6 +58,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [smsEnabled, setSmsEnabled] = useState(false);
+  const [whatsappEnabled, setWhatsappEnabled] = useState(false);
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,6 +66,8 @@ export default function SettingsPage() {
   
   const [emailSettings, setEmailSettings] = useState<EmailSettings | undefined>();
   const [smsSettings, setSmsSettings] = useState<SmsSettings | undefined>();
+  const [easypaisaSettings, setEasypaisaSettings] = useState<EasypaisaSettings | undefined>();
+  const [whatsappSettings, setWhatsappSettings] = useState<WhatsAppSettings | undefined>();
 
   const isSuperAdmin = session?.user?.role === 'SUPER_ADMIN';
 
@@ -76,6 +93,18 @@ export default function SettingsPage() {
               config: data.settings.sms_config,
             });
           }
+          if (data.settings.easypaisa_provider && data.settings.easypaisa_config) {
+            setEasypaisaSettings({
+              provider: data.settings.easypaisa_provider,
+              config: data.settings.easypaisa_config,
+            });
+          }
+          if (data.settings.whatsapp_provider && data.settings.whatsapp_config) {
+            setWhatsappSettings({
+              provider: data.settings.whatsapp_provider,
+              config: data.settings.whatsapp_config,
+            });
+          }
         }
       } else {
         const [subResponse, userResponse] = await Promise.all([
@@ -99,6 +128,7 @@ export default function SettingsPage() {
           const userData = await userResponse.json();
           setEmailEnabled(userData.emailNotificationsEnabled);
           setSmsEnabled(userData.smsNotificationsEnabled);
+          setWhatsappEnabled(userData.whatsappNotificationsEnabled);
         }
       }
     } catch (error) {
@@ -130,12 +160,30 @@ export default function SettingsPage() {
       return;
     }
 
+    if (whatsappEnabled && subscription.plan.whatsappLimit === 0) {
+      setMessage({ 
+        type: 'error', 
+        text: 'WhatsApp notifications are not available on your plan. Please upgrade your subscription to enable WhatsApp notifications.' 
+      });
+      setWhatsappEnabled(false);
+      return;
+    }
+
     if (emailEnabled && subscription.emailsUsed >= subscription.plan.emailLimit) {
       setMessage({ 
         type: 'error', 
         text: 'You have reached your email quota limit. Please upgrade your subscription or wait for the next billing cycle.' 
       });
       setEmailEnabled(false);
+      return;
+    }
+
+    if (whatsappEnabled && subscription.whatsappUsed >= subscription.plan.whatsappLimit) {
+      setMessage({ 
+        type: 'error', 
+        text: 'You have reached your WhatsApp quota limit. Please upgrade your subscription or wait for the next billing cycle.' 
+      });
+      setWhatsappEnabled(false);
       return;
     }
 
@@ -148,6 +196,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           emailNotificationsEnabled: emailEnabled,
           smsNotificationsEnabled: smsEnabled,
+          whatsappNotificationsEnabled: whatsappEnabled,
         }),
       });
 
@@ -230,6 +279,72 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveEasypaisa = async (settings: EasypaisaSettings) => {
+    const response = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        easypaisaProvider: settings.provider,
+        easypaisaConfig: settings.config,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save EasyPaisa settings');
+    }
+
+    setEasypaisaSettings(settings);
+  };
+
+  const handleTestEasypaisa = async (settings: EasypaisaSettings) => {
+    const response = await fetch('/api/easypaisa/status/test-connection', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        config: settings.config,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.details || 'Failed to test EasyPaisa connection');
+    }
+  };
+
+  const handleSaveWhatsApp = async (settings: WhatsAppSettings) => {
+    const response = await fetch('/api/settings', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        whatsappProvider: settings.provider,
+        whatsappConfig: settings.config,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to save WhatsApp settings');
+    }
+
+    setWhatsappSettings(settings);
+  };
+
+  const handleTestWhatsApp = async (settings: WhatsAppSettings, phoneNumber: string) => {
+    const response = await fetch('/api/settings/test-notification', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'whatsapp',
+        config: settings,
+        phoneNumber: phoneNumber,
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.details || 'Failed to send test WhatsApp message');
+    }
+  };
+
   if (loading) {
     return (
       <div className="animate-pulse">
@@ -246,14 +361,16 @@ export default function SettingsPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
           <p className="text-muted-foreground mt-2">
-            Configure global email and SMS settings for all users
+            Configure global email, SMS, WhatsApp, and payment gateway settings for all users
           </p>
         </div>
 
         <Tabs defaultValue="email" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-3xl grid-cols-4">
             <TabsTrigger value="email">Email</TabsTrigger>
             <TabsTrigger value="sms">SMS</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+            <TabsTrigger value="payment">Payment Gateway</TabsTrigger>
           </TabsList>
 
           <TabsContent value="email" className="mt-6">
@@ -269,6 +386,22 @@ export default function SettingsPage() {
               initialSettings={smsSettings}
               onSave={handleSaveSms}
               onTest={handleTestSms}
+            />
+          </TabsContent>
+
+          <TabsContent value="whatsapp" className="mt-6">
+            <WhatsAppSettingsForm
+              initialSettings={whatsappSettings}
+              onSave={handleSaveWhatsApp}
+              onTest={handleTestWhatsApp}
+            />
+          </TabsContent>
+
+          <TabsContent value="payment" className="mt-6">
+            <EasypaisaSettingsForm
+              initialSettings={easypaisaSettings}
+              onSave={handleSaveEasypaisa}
+              onTest={handleTestEasypaisa}
             />
           </TabsContent>
         </Tabs>
@@ -349,7 +482,7 @@ export default function SettingsPage() {
               <CardDescription>Your current plan and usage</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-3">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <div className="flex items-center space-x-3">
                   <TrendingUp className="h-5 w-5 text-gray-400" />
                   <div>
@@ -363,7 +496,7 @@ export default function SettingsPage() {
                 <div className="flex items-center space-x-3">
                   <Mail className="h-5 w-5 text-blue-500" />
                   <div>
-                    <p className="text-sm text-gray-500">Email Notifications</p>
+                    <p className="text-sm text-gray-500">Email</p>
                     <p className="font-medium">
                       {subscription.emailsUsed} / {subscription.plan.emailLimit}
                     </p>
@@ -379,7 +512,7 @@ export default function SettingsPage() {
                 <div className="flex items-center space-x-3">
                   <MessageSquare className="h-5 w-5 text-purple-500" />
                   <div>
-                    <p className="text-sm text-gray-500">SMS Notifications</p>
+                    <p className="text-sm text-gray-500">SMS</p>
                     <p className="font-medium">
                       {subscription.smsUsed} / {subscription.plan.smsLimit}
                     </p>
@@ -390,6 +523,26 @@ export default function SettingsPage() {
                           : 'text-green-600'
                       }`}>
                         {subscription.plan.smsLimit - subscription.smsUsed} remaining
+                      </p>
+                    ) : (
+                      <p className="text-xs text-gray-500">Not available</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <MessageSquare className="h-5 w-5 text-green-500" />
+                  <div>
+                    <p className="text-sm text-gray-500">WhatsApp</p>
+                    <p className="font-medium">
+                      {subscription.whatsappUsed} / {subscription.plan.whatsappLimit}
+                    </p>
+                    {subscription.plan.whatsappLimit > 0 ? (
+                      <p className={`text-xs font-semibold ${
+                        subscription.plan.whatsappLimit - subscription.whatsappUsed <= 2 
+                          ? 'text-red-600' 
+                          : 'text-green-600'
+                      }`}>
+                        {subscription.plan.whatsappLimit - subscription.whatsappUsed} remaining
                       </p>
                     ) : (
                       <p className="text-xs text-gray-500">Not available</p>
@@ -532,6 +685,52 @@ export default function SettingsPage() {
                   </Alert>
                 )}
 
+                {/* WhatsApp Quota Progress */}
+                {subscription.plan.whatsappLimit > 0 ? (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <MessageSquare className="h-4 w-4 text-green-500" />
+                        <span className="font-medium">WhatsApp Quota</span>
+                      </span>
+                      <span className={`font-semibold ${
+                        subscription.whatsappUsed >= subscription.plan.whatsappLimit 
+                          ? 'text-red-600' 
+                          : subscription.plan.whatsappLimit - subscription.whatsappUsed <= 2
+                          ? 'text-yellow-600'
+                          : 'text-green-600'
+                      }`}>
+                        {subscription.plan.whatsappLimit - subscription.whatsappUsed} remaining
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all ${
+                          subscription.whatsappUsed >= subscription.plan.whatsappLimit 
+                            ? 'bg-red-600' 
+                            : subscription.plan.whatsappLimit - subscription.whatsappUsed <= 2
+                            ? 'bg-yellow-500'
+                            : 'bg-green-600'
+                        }`}
+                        style={{ 
+                          width: `${Math.min((subscription.whatsappUsed / subscription.plan.whatsappLimit) * 100, 100)}%` 
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {subscription.whatsappUsed} of {subscription.plan.whatsappLimit} WhatsApp messages used
+                    </p>
+                  </div>
+                ) : (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      WhatsApp notifications are not available on the {subscription.plan.name} plan. 
+                      Upgrade to enable WhatsApp notifications.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
                 {subscription.emailsUsed >= subscription.plan.emailLimit && (
                   <Alert variant="destructive">
                     <AlertDescription>
@@ -587,6 +786,37 @@ export default function SettingsPage() {
               {subscription && subscription.plan.smsLimit === 0 && (
                 <p className="text-sm text-yellow-600">
                   SMS notifications are not available on the Free plan. Upgrade to enable SMS.
+                </p>
+              )}
+
+              <div className="flex items-center justify-between space-x-2">
+                <div className="flex-1">
+                  <Label htmlFor="whatsapp-notifications" className="text-base">
+                    WhatsApp Notifications
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Receive invoice notifications via WhatsApp
+                  </p>
+                </div>
+                <Switch
+                  id="whatsapp-notifications"
+                  checked={whatsappEnabled}
+                  onCheckedChange={(checked) => {
+                    if (checked && subscription && subscription.plan.whatsappLimit === 0) {
+                      setMessage({ 
+                        type: 'error', 
+                        text: 'WhatsApp notifications are not available on your plan. Please upgrade to enable WhatsApp.' 
+                      });
+                      return;
+                    }
+                    setWhatsappEnabled(checked);
+                  }}
+                  disabled={!subscription || subscription.plan.whatsappLimit === 0}
+                />
+              </div>
+              {subscription && subscription.plan.whatsappLimit === 0 && (
+                <p className="text-sm text-yellow-600">
+                  WhatsApp notifications are not available on your plan. Upgrade to enable WhatsApp.
                 </p>
               )}
             </div>

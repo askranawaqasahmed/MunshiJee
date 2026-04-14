@@ -47,9 +47,50 @@ export const paymentSchema = z.object({
   customerId: z.string().min(1, "Customer is required"),
   amount: z.number().min(0, "Amount must be positive"),
   paymentDate: z.string().optional(),
-  method: z.enum(["CASH", "BANK_TRANSFER", "CHEQUE", "ONLINE", "OTHER"]),
+  method: z.enum(["CASH", "BANK_TRANSFER", "CHEQUE", "ONLINE", "EASYPAISA", "OTHER"]),
   reference: z.string().optional(),
   notes: z.string().optional(),
+});
+
+export const easypaisaInitiateSchema = z.object({
+  invoiceId: z.string().min(1, "Invoice is required"),
+  transactionType: z.enum(["MA", "OTC"], {
+    required_error: "Transaction type is required",
+  }),
+  mobileAccountNo: z.string().optional(),
+  emailAddress: z.string().email().optional(),
+}).refine((data) => {
+  if (data.transactionType === "MA" && !data.mobileAccountNo) {
+    return false;
+  }
+  return true;
+}, {
+  message: "Mobile account number is required for MA transactions",
+  path: ["mobileAccountNo"],
+});
+
+export const easypaisaSettingsSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(1, "Password is required"),
+  storeId: z.string().min(1, "Store ID is required"),
+  accountNum: z.string().min(1, "Account number is required"),
+  environment: z.enum(["sandbox", "production"]),
+});
+
+export const whatsappBartySettingsSchema = z.object({
+  bearerToken: z.string().min(1, "Bearer token is required"),
+  apiEndpoint: z.string().url("Valid API endpoint URL is required"),
+  phoneNumberId: z.string().optional(),
+});
+
+export const whatsappWatiSettingsSchema = z.object({
+  accessToken: z.string().min(1, "Access token is required"),
+  apiEndpoint: z.string().url("Valid API endpoint URL is required"),
+});
+
+export const whatsappSettingsSchema = z.object({
+  provider: z.enum(["barty", "wati"]),
+  config: z.union([whatsappBartySettingsSchema, whatsappWatiSettingsSchema]),
 });
 
 export const signupSchema = z.object({
@@ -73,3 +114,6 @@ export type InvoiceInput = z.infer<typeof invoiceSchema>;
 export type SaleInput = z.infer<typeof saleSchema>;
 export type PaymentInput = z.infer<typeof paymentSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
+export type EasypaisaInitiateInput = z.infer<typeof easypaisaInitiateSchema>;
+export type EasypaisaSettingsInput = z.infer<typeof easypaisaSettingsSchema>;
+export type WhatsAppSettingsInput = z.infer<typeof whatsappSettingsSchema>;

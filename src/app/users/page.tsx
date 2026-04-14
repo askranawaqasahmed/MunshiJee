@@ -93,6 +93,10 @@ export default async function UsersPage() {
                       <MessageSquare className="h-4 w-4 inline mr-1" />
                       SMS Left
                     </th>
+                    <th className="text-center p-3 font-medium">
+                      <MessageSquare className="h-4 w-4 inline mr-1 text-green-600" />
+                      WhatsApp Left
+                    </th>
                     <th className="text-center p-3 font-medium">Expiry Date</th>
                     <th className="text-right p-3 font-medium">Invoices</th>
                     <th className="text-right p-3 font-medium">Revenue</th>
@@ -106,6 +110,9 @@ export default async function UsersPage() {
                       : 0;
                     const smsLeft = user.subscription 
                       ? user.subscription.plan.smsLimit - user.subscription.smsUsed 
+                      : 0;
+                    const whatsappLeft = user.subscription 
+                      ? user.subscription.plan.whatsappLimit - user.subscription.whatsappUsed 
                       : 0;
                     
                     return (
@@ -162,6 +169,26 @@ export default async function UsersPage() {
                                 </p>
                                 <p className="text-xs text-gray-500">
                                   of {user.subscription.plan.smsLimit}
+                                </p>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-gray-400">N/A</span>
+                            )
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="p-3 text-center">
+                          {user.subscription ? (
+                            user.subscription.plan.whatsappLimit > 0 ? (
+                              <div>
+                                <p className={`font-semibold ${
+                                  whatsappLeft <= 2 ? 'text-red-600' : 'text-green-600'
+                                }`}>
+                                  {whatsappLeft}
+                                </p>
+                                <p className="text-xs text-gray-500">
+                                  of {user.subscription.plan.whatsappLimit}
                                 </p>
                               </div>
                             ) : (

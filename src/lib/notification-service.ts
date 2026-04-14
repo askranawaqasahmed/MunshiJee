@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { EmailService, EmailConfig } from '@/lib/email-service';
 import { SmsService, SmsConfig } from '@/lib/sms-service';
+import { WhatsAppService, WhatsAppConfig, getWhatsAppSettings } from '@/lib/whatsapp-service';
 import { generatePdfToken } from '@/lib/pdf-token';
 import { getInvoiceEmailTemplate } from '@/lib/email-templates';
 import { format } from 'date-fns';
@@ -15,8 +16,10 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
         user: {
           select: {
             id: true,
+            name: true,
             emailNotificationsEnabled: true,
             smsNotificationsEnabled: true,
+            whatsappNotificationsEnabled: true,
           },
         },
       },
@@ -44,6 +47,7 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
 
     const emailSettings = await getEmailSettings(null);
     const smsSettings = await getSmsSettings(null);
+    const whatsappSettings = await getWhatsAppSettings(null);
 
     const pdfToken = generatePdfToken(invoiceId);
     const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
@@ -98,6 +102,29 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
       await prisma.user.update({
         where: { id: invoice.userId },
         data: { smsNotificationsEnabled: false },
+      });
+    }
+
+    if (
+      invoice.user.whatsappNotificationsEnabled &&
+      whatsappSettings &&
+      invoice.customer.phone &&
+      activeSubscription.whatsappUsed < activeSubscription.plan.whatsappLimit
+    ) {
+      await sendWhatsAppNotification(
+        invoiceId,
+        invoice.customer.phone,
+        whatsappSettings,
+        invoiceData,
+        invoice.user.name,
+        activeSubscription.id
+      );
+    } else if (invoice.user.whatsappNotificationsEnabled && activeSubscription.whatsappUsed >= activeSubscription.plan.whatsappLimit) {
+      console.warn(`User ${invoice.userId} has reached WhatsApp quota limit. Auto-disabling WhatsApp notifications.`);
+      
+      await prisma.user.update({
+        where: { id: invoice.userId },
+        data: { whatsappNotificationsEnabled: false },
       });
     }
   } catch (error) {
@@ -284,5 +311,49 @@ export async function getSmsSettings(userId: string | null = null): Promise<SmsC
   } catch (error) {
     console.error('Error fetching SMS settings:', error);
     return null;
+  }
+}
+
+async function sendWhatsAppNotification(
+  invoiceId: string,
+  recipientPhone: string,
+  whatsappSettings: WhatsAppConfig,
+  invoiceData: {
+    customerName: string;
+    invoiceNumber: string;
+    amount: string;
+    dueDate: string;
+    pdfDownloadUrl: string;
+  },
+  senderName: string,
+  subscriptionId: string
+): Promise<void> {
+  const logId = await createNotificationLog({
+    invoiceId,
+    type: 'SMS',
+    provider: whatsappSettings.provider,
+    recipient: recipientPhone,
+  });
+
+  try {
+    const whatsappService = new WhatsAppService(whatsappSettings);
+    
+    const whatsappMessage = `You have received an invoice of ${invoiceData.amount} from ${senderName}. Download PDF: ${invoiceData.pdfDownloadUrl}`;
+
+    await whatsappService.send({
+      to: recipientPhone,
+      message: whatsappMessage,
+    });
+
+    await updateNotificationLog(logId, 'SENT', null);
+    
+    await prisma.userSubscription.update({
+      where: { id: subscriptionId },
+      data: { whatsappUsed: { increment: 1 } },
+    });
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    await updateNotificationLog(logId, 'FAILED', errorMessage);
+    console.error('Failed to send WhatsApp notification:', error);
   }
 }

@@ -15,6 +15,7 @@ interface Plan {
   slug: string;
   emailLimit: number;
   smsLimit: number;
+  whatsappLimit?: number;
   price: number;
   description: string;
   isFree: boolean;
@@ -170,6 +171,10 @@ export default function SubscriptionsManagementPage() {
                     <div className="flex items-center justify-between py-2 border-b">
                       <span className="text-gray-600">SMS Notifications</span>
                       <span className="font-semibold">{plan.smsLimit.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between py-2 border-b">
+                      <span className="text-gray-600">WhatsApp Notifications</span>
+                      <span className="font-semibold">{(plan.whatsappLimit ?? 0).toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between py-2">
                       <span className="text-gray-600">Active Users</span>

@@ -16,6 +16,7 @@ export async function GET() {
       select: {
         emailNotificationsEnabled: true,
         smsNotificationsEnabled: true,
+        whatsappNotificationsEnabled: true,
       },
     });
 

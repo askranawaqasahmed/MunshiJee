@@ -20,6 +20,7 @@ interface Plan {
   slug: string;
   emailLimit: number;
   smsLimit: number;
+  whatsappLimit?: number;
   price: number;
   description: string;
   isFree: boolean;
@@ -162,6 +163,28 @@ export default function SubscriptionPage() {
                           : 'No SMS notifications'}
                       </p>
                       {plan.smsLimit > 0 && (
+                        <p className="text-xs text-gray-500">per month</p>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-start gap-3">
+                    <div className={`rounded-full p-1 mt-0.5 ${
+                      (plan.whatsappLimit ?? 0) > 0 ? 'bg-green-100' : 'bg-gray-100'
+                    }`}>
+                      <Check className={`h-4 w-4 ${
+                        (plan.whatsappLimit ?? 0) > 0 ? 'text-green-600' : 'text-gray-400'
+                      }`} />
+                    </div>
+                    <div className="flex-1">
+                      <p className={`font-medium text-sm ${
+                        (plan.whatsappLimit ?? 0) === 0 ? 'text-gray-400' : ''
+                      }`}>
+                        {(plan.whatsappLimit ?? 0) > 0 
+                          ? `${(plan.whatsappLimit ?? 0).toLocaleString()} WhatsApp Notifications` 
+                          : 'No WhatsApp notifications'}
+                      </p>
+                      {(plan.whatsappLimit ?? 0) > 0 && (
                         <p className="text-xs text-gray-500">per month</p>
                       )}
                     </div>

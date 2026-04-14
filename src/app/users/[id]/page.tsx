@@ -85,6 +85,20 @@ export default async function UserDetailPage({
       }),
     ]);
 
+  // Serialize data to avoid Decimal type issues with Client Components
+  const serializedCurrentSubscription = currentSubscription ? {
+    ...currentSubscription,
+    plan: {
+      ...currentSubscription.plan,
+      price: Number(currentSubscription.plan.price),
+    },
+  } : null;
+
+  const serializedAvailablePlans = availablePlans.map(plan => ({
+    ...plan,
+    price: Number(plan.price),
+  }));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -146,8 +160,8 @@ export default async function UserDetailPage({
       {/* Subscription Management */}
       <SubscriptionManager
         userId={user.id}
-        currentSubscription={currentSubscription}
-        availablePlans={availablePlans}
+        currentSubscription={serializedCurrentSubscription}
+        availablePlans={serializedAvailablePlans}
       />
 
       {/* Statistics Cards */}
@@ -242,7 +256,7 @@ export default async function UserDetailPage({
                     </div>
                     <div className="text-right">
                       <p className="font-medium">
-                        Rs.{invoice.amount.toFixed(2)}
+                        Rs.{Number(invoice.amount).toFixed(2)}
                       </p>
                       <p className="text-xs text-gray-500">
                         {invoice.status}

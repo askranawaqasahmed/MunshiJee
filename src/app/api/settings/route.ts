@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest) {
     const userId = session.user.role === 'SUPER_ADMIN' ? null : session.user.id;
 
     const body = await request.json();
-    const { emailProvider, emailConfig, smsProvider, smsConfig } = body;
+    const { emailProvider, emailConfig, smsProvider, smsConfig, easypaisaProvider, easypaisaConfig, whatsappProvider, whatsappConfig } = body;
 
     if (emailProvider && emailConfig) {
       // Check if settings exist
@@ -136,6 +136,98 @@ export async function PUT(request: NextRequest) {
           data: { 
             key: 'sms_config', 
             value: smsConfig,
+            userId: userId,
+          },
+        });
+      }
+    }
+
+    if (easypaisaProvider && easypaisaConfig) {
+      const existingProviderSetting = await prisma.settings.findFirst({
+        where: { 
+          key: 'easypaisa_provider',
+          userId: userId,
+        }
+      });
+
+      if (existingProviderSetting) {
+        await prisma.settings.update({
+          where: { id: existingProviderSetting.id },
+          data: { value: easypaisaProvider },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'easypaisa_provider', 
+            value: easypaisaProvider,
+            userId: userId,
+          },
+        });
+      }
+
+      const existingConfigSetting = await prisma.settings.findFirst({
+        where: { 
+          key: 'easypaisa_config',
+          userId: userId,
+        }
+      });
+
+      if (existingConfigSetting) {
+        await prisma.settings.update({
+          where: { id: existingConfigSetting.id },
+          data: { value: easypaisaConfig },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'easypaisa_config', 
+            value: easypaisaConfig,
+            userId: userId,
+          },
+        });
+      }
+    }
+
+    if (whatsappProvider && whatsappConfig) {
+      const existingProviderSetting = await prisma.settings.findFirst({
+        where: { 
+          key: 'whatsapp_provider',
+          userId: userId,
+        }
+      });
+
+      if (existingProviderSetting) {
+        await prisma.settings.update({
+          where: { id: existingProviderSetting.id },
+          data: { value: whatsappProvider },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'whatsapp_provider', 
+            value: whatsappProvider,
+            userId: userId,
+          },
+        });
+      }
+
+      const existingConfigSetting = await prisma.settings.findFirst({
+        where: { 
+          key: 'whatsapp_config',
+          userId: userId,
+        }
+      });
+
+      if (existingConfigSetting) {
+        await prisma.settings.update({
+          where: { id: existingConfigSetting.id },
+          data: { value: whatsappConfig },
+        });
+      } else {
+        await prisma.settings.create({
+          data: { 
+            key: 'whatsapp_config', 
+            value: whatsappConfig,
             userId: userId,
           },
         });

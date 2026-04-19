@@ -1,102 +1,221 @@
-# WhatsApp API Setup Guide
+# WhatsApp Business Cloud API Setup Guide (Meta)
 
-## Wati.io Setup Instructions
+This guide will help you set up Meta's WhatsApp Business Cloud API for sending invoice notifications to your customers.
 
-### 1. Get Your API Credentials
+## Prerequisites
 
-1. Login to your Wati.io dashboard at https://app.wati.io
-2. Go to **Settings** → **API Docs** or **API Access**
-3. Copy your **Access Token**
-4. Note your **API Endpoint URL** (usually in format: `https://live-server-xxxxx.wati.io`)
+- A Meta Business Account
+- A Facebook Developer Account
+- A verified business phone number
+- A test phone number (can be your own WhatsApp number)
 
-### 2. Configure in MunshiJee
+## Step 1: Create a Meta Business App
 
-In the MunshiJee Settings page (WhatsApp tab):
+1. Go to [Meta for Developers](https://developers.facebook.com/apps)
+2. Click **Create App**
+3. Select **Business** as the app type
+4. Fill in your app details:
+   - App name: e.g., "MunshiJee Invoice Notifications"
+   - Business account: Select your business account
+5. Click **Create App**
 
-1. **Provider**: Select "Wati.io"
-2. **Access Token**: Paste your Wati access token (REMOVE the "Bearer " prefix if it's there)
-   - ✅ Correct: `eyJhbGciOiJIUzI1NiIsInR5cCI6...`
-   - ❌ Wrong: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6...`
-3. **API Endpoint**: Enter your complete Wati API URL including account ID
-   - ✅ Correct: `https://live-mt-server.wati.io/101344347`
-   - ❌ Wrong: `https://live-mt-server.wati.io`
-   
-   **Important**: Use the EXACT URL shown in your Wati dashboard API Docs section.
+## Step 2: Add WhatsApp Product
 
-### 3. Test Phone Number Format
+1. In your app dashboard, find **WhatsApp** in the Products section
+2. Click **Set Up** next to WhatsApp
+3. Complete the Quick Start wizard:
+   - Select or create a WhatsApp Business Account (WABA)
+   - Add a phone number or use the test number provided by Meta
+   - Verify your business phone number
 
-When testing, make sure:
-- Phone number is in international format
-- For Pakistan: `923001234567` or `+923001234567`
-- The system will automatically format it correctly
+## Step 3: Get Your Phone Number ID
 
-### 4. Common Issues & Solutions
+1. In the WhatsApp section of your app dashboard
+2. Go to **API Setup** or **Getting Started**
+3. Find your **Phone Number ID** (15-digit number)
+4. Copy and save this - you'll need it for MunshiJee settings
 
-#### 404 - Not Found
-- **Cause**: Incorrect API endpoint URL
-- **Solution**: Make sure you're using only the base URL (e.g., `https://live-server-12345.wati.io`)
-- **Check**: Your API endpoint in Wati dashboard
+Example Phone Number ID: `123456789012345`
 
-#### 401 - Unauthorized
-- **Cause**: Invalid or expired access token
-- **Solution**: Generate a new access token from Wati dashboard
+## Step 4: Create a System User and Access Token
 
-#### 403 - Forbidden OR "message text can not be empty"
-- **Cause**: Phone number has no active conversation session
-- **Solution**: 
-  1. **CRITICAL**: The recipient MUST send a message to your Wati WhatsApp Business number FIRST
-  2. Messages can only be sent within 24 hours after the recipient messages you
-  3. For testing: Send a "Hi" from your test number to your Wati number, then try again
-  4. For production: Use template messages for first contact, session messages for replies
+### Create System User
 
-### 5. Wati API Endpoints
+1. Go to [Meta Business Settings](https://business.facebook.com/settings/)
+2. Navigate to **Users** → **System Users**
+3. Click **Add** to create a new system user
+4. Give it a name like "MunshiJee WhatsApp Service"
+5. Assign **Admin** role
 
-Wati provides different types of message endpoints:
+### Generate Access Token
 
-1. **Session Message** (Current implementation)
-   - Endpoint: `/api/v1/sendSessionMessage`
-   - Requires: Active 24-hour session window
-   - Use: For customers who messaged you first
+1. Click on the system user you just created
+2. Click **Generate New Token**
+3. Select your WhatsApp app from the dropdown
+4. Select permissions:
+   - ✅ `whatsapp_business_messaging` (required)
+   - ✅ `whatsapp_business_management` (recommended)
+5. Set token expiration to **Never** (permanent token)
+6. Click **Generate Token**
+7. **IMPORTANT**: Copy and save this token immediately - you won't be able to see it again!
 
-2. **Template Message** (Alternative)
-   - Endpoint: `/api/v1/sendTemplateMessage`
-   - Requires: Pre-approved template
-   - Use: For initiating conversations
+Example Access Token: `EAAxxxxxxxxxxxx...` (very long string)
 
-### 6. Phone Number Requirements
+## Step 5: Create and Approve Message Template
 
-- Must include country code
-- For Pakistan: Start with `92` (without leading 0)
-- System automatically formats: `0300-1234567` → `923001234567`
+WhatsApp requires pre-approved message templates for business-initiated conversations.
 
-### 7. Testing Checklist
+### Template Structure
 
-Before testing, verify:
-- [ ] Wati access token is valid
-- [ ] API endpoint is correct base URL only
-- [ ] Test phone number has an active WhatsApp session with your Wati number
-- [ ] Phone number is saved in customer database
+Your template must include these components:
 
-## Barty.io Setup Instructions
+**Template Name**: `invoice_notification` (or your preferred name)
 
-### 1. Get Your API Credentials
+**Category**: Utility
 
-1. Login to Barty.io
-2. Get your **Bearer Token**
-3. Get your **API Endpoint**
-4. (Optional) Get your **Phone Number ID**
+**Language**: English (US) or your preferred language
 
-### 2. Configure in MunshiJee
+**Body Text**:
+```
+Hi {{1}}, your invoice {{2}} for {{3}} is ready. Due date: {{4}}.
+```
 
-1. **Provider**: Select "Barty.io"
-2. **Bearer Token**: Paste your token
-3. **API Endpoint**: Enter base URL
-4. **Phone Number ID**: (Optional)
+**Parameters**:
+1. `{{1}}` - Customer Name
+2. `{{2}}` - Invoice Number
+3. `{{3}}` - Amount (e.g., Rs.1000.00)
+4. `{{4}}` - Due Date
 
-## Need Help?
+**Optional: Add a Button**:
+- Button Type: URL
+- Button Text: "Download PDF"
+- URL: Dynamic (use `{{1}}` as the dynamic URL parameter)
 
-If you continue to face issues:
-1. Check the terminal/console logs for detailed error messages
-2. Verify your Wati/Barty dashboard for API access
-3. Test with Postman/curl first to isolate the issue
-4. Contact Wati/Barty support for API access issues
+### Submit Template for Approval
+
+1. In your WhatsApp Business Account dashboard
+2. Go to **Message Templates**
+3. Click **Create Template**
+4. Fill in the template details as shown above
+5. Submit for approval (usually takes a few hours, up to 24 hours)
+
+### Example Template Body
+
+```
+Hi {{1}}, your invoice {{2}} for {{3}} is ready. Due date: {{4}}.
+
+Thank you for your business!
+```
+
+## Step 6: Configure MunshiJee
+
+1. Log in to MunshiJee as a Super Admin
+2. Go to **Settings** → **WhatsApp** tab
+3. Fill in the following details:
+
+   - **Access Token**: Paste your permanent system user token
+   - **Phone Number ID**: Your 15-digit phone number ID
+   - **WABA ID** (Optional): Your WhatsApp Business Account ID
+   - **API Version**: `v20.0` (or latest version)
+   - **Template Name**: `invoice_notification` (or your approved template name)
+   - **Template Language**: `en_US` (or your template language code)
+
+4. Enter a test phone number (use international format without +)
+   - Example: `923001234567` for Pakistan
+5. Click **Send Test Message**
+6. Check your WhatsApp for the test message
+7. If successful, click **Save Settings**
+
+## Step 7: Enable WhatsApp Notifications for Users
+
+### For Super Admin:
+All settings are configured globally in Settings → WhatsApp tab.
+
+### For Regular Users:
+1. Go to **Settings** page
+2. Find **WhatsApp Notifications** toggle
+3. Enable it (only works if Super Admin has configured WhatsApp settings)
+4. Save preferences
+
+## Troubleshooting
+
+### Test Message Fails
+
+**Error: Invalid Phone Number ID**
+- Verify your Phone Number ID is correct (15 digits)
+- Make sure you're using the Phone Number ID, not the phone number itself
+
+**Error: Invalid Access Token**
+- Generate a new system user token
+- Make sure you selected the correct app when generating
+- Ensure `whatsapp_business_messaging` permission is included
+
+**Error: Template Not Found**
+- Verify your template is approved (check status in Message Templates)
+- Ensure the template name matches exactly (case-sensitive)
+- Wait a few minutes after approval before testing
+
+**Error: Recipient Phone Number Not Allowed**
+- For test/sandbox phone numbers, you need to add test recipients
+- Go to WhatsApp → API Setup → Add test phone number
+- Send opt-in confirmation message to the test number
+
+### Message Delivered But Not Received
+
+- Check if the recipient's WhatsApp is active
+- Verify the phone number format (should be just digits, e.g., 923001234567)
+- Check WhatsApp Business account status (not suspended)
+- Review message quality rating in Meta Business Manager
+
+### Template Rejected
+
+Common reasons:
+- Template contains promotional content (not allowed in Utility category)
+- Spelling or grammar errors
+- Template doesn't follow WhatsApp guidelines
+- Variable placeholders not properly formatted
+
+Fix and resubmit for approval.
+
+## Testing in Production
+
+Once setup is complete and templates are approved:
+
+1. Create a test invoice with status "SENT"
+2. Make sure the customer has a valid WhatsApp phone number
+3. Check the customer's WhatsApp for the notification
+4. Verify the notification log in Admin → Notifications
+
+## Rate Limits and Quotas
+
+- **Messaging Tier**: New businesses start in Tier 1 (250 conversations/24hrs)
+- **Quality Rating**: Maintain high quality to unlock higher tiers
+- **Template Messages**: Count towards your messaging quota
+- See [WHATSAPP_QUOTAS.md](WHATSAPP_QUOTAS.md) for detailed quota information
+
+## Production Checklist
+
+- ✅ Meta Business Account verified
+- ✅ WhatsApp Business Account created
+- ✅ Business phone number verified
+- ✅ System user created with permanent token
+- ✅ Message template approved
+- ✅ Test message successfully sent
+- ✅ Phone number quality rating is "High"
+- ✅ Settings saved in MunshiJee
+
+## Additional Resources
+
+- [Meta WhatsApp Business Platform Documentation](https://developers.facebook.com/docs/whatsapp)
+- [WhatsApp Message Templates Guidelines](https://developers.facebook.com/docs/whatsapp/message-templates/guidelines)
+- [WhatsApp Cloud API Reference](https://developers.facebook.com/docs/whatsapp/cloud-api)
+- [Business Manager Help Center](https://www.facebook.com/business/help)
+
+## Support
+
+If you encounter issues not covered in this guide:
+
+1. Check the MunshiJee logs in the terminal
+2. Review the notification logs in Admin → Notifications
+3. Check Meta Business Manager for any account restrictions
+4. Review WhatsApp API error codes in the [Meta documentation](https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes)

@@ -45,6 +45,7 @@ enum PaymentMethod {
 enum NotificationType {
   EMAIL
   SMS
+  WHATSAPP
 }
 
 enum NotificationStatus {

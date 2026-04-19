@@ -1,230 +1,175 @@
 import { prisma } from '@/lib/prisma';
 
-export interface BartyConfig {
-  bearerToken: string;
-  apiEndpoint: string;
-  phoneNumberId?: string;
-}
-
-export interface WatiConfig {
+export interface MetaConfig {
   accessToken: string;
-  apiEndpoint: string;
-  templateName?: string; // Optional: Template name for initiating conversations
+  phoneNumberId: string;
+  wabaId?: string;
+  apiVersion?: string;
+  templateName: string;
+  templateLanguage?: string;
 }
 
 export interface WhatsAppConfig {
-  provider: 'barty' | 'wati';
-  config: BartyConfig | WatiConfig;
+  provider: 'meta';
+  config: MetaConfig;
 }
 
 export interface WhatsAppMessagePayload {
   to: string;
-  message: string;
-  mediaUrl?: string;
+  customerName: string;
+  invoiceNumber: string;
+  amount: string;
+  dueDate: string;
+  pdfDownloadUrl?: string;
 }
 
 export class WhatsAppService {
   constructor(private whatsappConfig: WhatsAppConfig) {}
 
   async send(payload: WhatsAppMessagePayload): Promise<void> {
-    if (this.whatsappConfig.provider === 'barty') {
-      return this.sendWithBarty(payload);
-    } else if (this.whatsappConfig.provider === 'wati') {
-      return this.sendWithWati(payload);
-    } else {
+    if (this.whatsappConfig.provider !== 'meta') {
       throw new Error(`Unsupported WhatsApp provider: ${this.whatsappConfig.provider}`);
     }
+    return this.sendWithMeta(payload);
   }
 
-  private async sendWithBarty(payload: WhatsAppMessagePayload): Promise<void> {
-    const config = this.whatsappConfig.config as BartyConfig;
+  private async sendWithMeta(payload: WhatsAppMessagePayload): Promise<void> {
+    const config = this.whatsappConfig.config;
+    const apiVersion = config.apiVersion || 'v20.0';
+    const templateLanguage = config.templateLanguage || 'en_US';
 
     const phoneNumber = this.formatPhoneNumber(payload.to);
 
-    const requestBody: any = {
-      receiver: phoneNumber,
-      message: {
-        text: payload.message,
+    const components: any[] = [
+      {
+        type: 'body',
+        parameters: [
+          {
+            type: 'text',
+            text: payload.customerName,
+          },
+          {
+            type: 'text',
+            text: payload.invoiceNumber,
+          },
+          {
+            type: 'text',
+            text: payload.amount,
+          },
+          {
+            type: 'text',
+            text: payload.dueDate,
+          },
+        ],
+      },
+    ];
+
+    if (payload.pdfDownloadUrl) {
+      components.push({
+        type: 'button',
+        sub_type: 'url',
+        index: '0',
+        parameters: [
+          {
+            type: 'text',
+            text: payload.pdfDownloadUrl,
+          },
+        ],
+      });
+    }
+
+    const requestBody = {
+      messaging_product: 'whatsapp',
+      to: phoneNumber,
+      type: 'template',
+      template: {
+        name: config.templateName,
+        language: {
+          code: templateLanguage,
+        },
+        components,
       },
     };
 
-    if (payload.mediaUrl) {
-      requestBody.message.media = {
-        url: payload.mediaUrl,
-      };
-    }
-
     try {
-      const response = await fetch(`${config.apiEndpoint}/messages/send`, {
+      const url = `https://graph.facebook.com/${apiVersion}/${config.phoneNumberId}/messages`;
+      
+      console.log('Meta WhatsApp API request:', {
+        url,
+        phoneNumber,
+        templateName: config.templateName,
+      });
+
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${config.bearerToken}`,
+          'Authorization': `Bearer ${config.accessToken}`,
         },
         body: JSON.stringify(requestBody),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        const errorDetails = responseData.error 
+          ? `${responseData.error.message} (code: ${responseData.error.code}${responseData.error.error_subcode ? `, subcode: ${responseData.error.error_subcode}` : ''})`
+          : JSON.stringify(responseData);
+        
         throw new Error(
-          `Barty API error: ${response.status} - ${errorData.message || response.statusText}`
+          `Meta WhatsApp API error: ${response.status} - ${errorDetails}`
         );
       }
 
-      const data = await response.json();
-      console.log('Barty WhatsApp message sent:', data);
+      console.log('Meta WhatsApp message sent:', responseData);
     } catch (error) {
-      console.error('Error sending WhatsApp message via Barty:', error);
+      console.error('Error sending WhatsApp message via Meta:', error);
       throw error;
     }
   }
 
-  private async sendWithWati(payload: WhatsAppMessagePayload): Promise<void> {
-    const config = this.whatsappConfig.config as WatiConfig;
+  async sendText(to: string, message: string): Promise<void> {
+    const config = this.whatsappConfig.config;
+    const apiVersion = config.apiVersion || 'v20.0';
+    const phoneNumber = this.formatPhoneNumber(to);
 
-    const phoneNumber = this.formatPhoneNumber(payload.to);
+    const requestBody = {
+      messaging_product: 'whatsapp',
+      to: phoneNumber,
+      type: 'text',
+      text: {
+        body: message,
+      },
+    };
 
-    // Wati expects the phone number WITHOUT + prefix in the URL
-    const cleanPhoneNumber = phoneNumber.replace(/^\+/, '');
-
-    // Remove trailing slash from apiEndpoint if present
-    const baseUrl = config.apiEndpoint.replace(/\/$/, '');
-
-    // Try session message first, fallback to template if configured
     try {
-      await this.sendWatiSessionMessage(baseUrl, config.accessToken, cleanPhoneNumber, payload.message);
-      console.log('✅ Wati session message sent successfully');
-    } catch (sessionError: any) {
-      // If no active session and template is configured, try template message
-      if (sessionError.message?.includes('message text can not be empty') && config.templateName) {
-        console.log('⚠️ No active session, trying template message...');
-        await this.sendWatiTemplateMessage(baseUrl, config.accessToken, cleanPhoneNumber, config.templateName, payload.message);
-        console.log('✅ Wati template message sent successfully');
-      } else {
-        throw sessionError;
-      }
-    }
-  }
+      const url = `https://graph.facebook.com/${apiVersion}/${config.phoneNumberId}/messages`;
 
-  private async sendWatiSessionMessage(
-    baseUrl: string,
-    accessToken: string,
-    phoneNumber: string,
-    message: string
-  ): Promise<void> {
-    const requestBody = {
-      messageText: message,
-    };
-
-    const fullUrl = `${baseUrl}/api/v1/sendSessionMessage/${phoneNumber}`;
-
-    console.log('Wati session message request:', {
-      url: fullUrl,
-      phoneNumber,
-      messageLength: message.length,
-    });
-
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const responseText = await response.text();
-    console.log('Wati session message response:', {
-      status: response.status,
-      body: responseText.substring(0, 500),
-    });
-
-    if (!response.ok || responseText.includes('"result":false')) {
-      let errorData: any = {};
-      try {
-        errorData = JSON.parse(responseText);
-      } catch (e) {
-        // Response is not JSON
-      }
-
-      if (errorData.result === false && errorData.info) {
-        throw new Error(`Wati API: ${errorData.info}`);
-      }
-
-      throw new Error(
-        `Wati API error: ${response.status} - ${errorData.message || errorData.error || response.statusText || responseText}`
-      );
-    }
-  }
-
-  private async sendWatiTemplateMessage(
-    baseUrl: string,
-    accessToken: string,
-    phoneNumber: string,
-    templateName: string,
-    message: string
-  ): Promise<void> {
-    // Parse message to extract invoice details for template parameters
-    // Expected format: "You have received an invoice of Rs.XXX from BUSINESS. Download PDF: URL"
-    const amountMatch = message.match(/Rs\.?([\d,]+\.?\d*)/);
-    const businessMatch = message.match(/from (.+?)\./);
-    const urlMatch = message.match(/Download PDF: (.+)$/);
-
-    // Wati expects PascalCase field names
-    const requestBody = {
-      TemplateName: templateName,
-      BroadcastName: 'Invoice Notification',
-      Parameters: [
-        {
-          name: '1', // Template {{1}} = amount
-          value: amountMatch ? amountMatch[1] : '0',
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${config.accessToken}`,
         },
-        {
-          name: '2', // Template {{2}} = business name
-          value: businessMatch ? businessMatch[1] : 'Business',
-        },
-        {
-          name: '3', // Template {{3}} = PDF URL
-          value: urlMatch ? urlMatch[1] : '',
-        },
-      ],
-    };
+        body: JSON.stringify(requestBody),
+      });
 
-    const fullUrl = `${baseUrl}/api/v1/sendTemplateMessage?whatsappNumber=${phoneNumber}`;
+      const responseData = await response.json();
 
-    console.log('Wati template message request:', {
-      url: fullUrl,
-      phoneNumber,
-      templateName,
-      parameters: requestBody.Parameters,
-    });
-
-    const response = await fetch(fullUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    const responseText = await response.text();
-    console.log('Wati template message response:', {
-      status: response.status,
-      body: responseText.substring(0, 500),
-    });
-
-    if (!response.ok) {
-      let errorData: any = {};
-      try {
-        errorData = JSON.parse(responseText);
-      } catch (e) {
-        // Response is not JSON
+      if (!response.ok) {
+        const errorDetails = responseData.error 
+          ? `${responseData.error.message} (code: ${responseData.error.code})`
+          : JSON.stringify(responseData);
+        
+        throw new Error(
+          `Meta WhatsApp API error: ${response.status} - ${errorDetails}`
+        );
       }
 
-      throw new Error(
-        `Wati template API error: ${response.status} - ${errorData.message || errorData.info || responseText}`
-      );
+      console.log('Meta WhatsApp text message sent:', responseData);
+    } catch (error) {
+      console.error('Error sending text message via Meta:', error);
+      throw error;
     }
   }
 
@@ -263,8 +208,8 @@ export async function getWhatsAppSettings(userId: string | null = null): Promise
     }
 
     return {
-      provider: providerSetting.value as 'barty' | 'wati',
-      config: configSetting.value as unknown as BartyConfig | WatiConfig,
+      provider: providerSetting.value as 'meta',
+      config: configSetting.value as unknown as MetaConfig,
     };
   } catch (error) {
     console.error('Error fetching WhatsApp settings:', error);

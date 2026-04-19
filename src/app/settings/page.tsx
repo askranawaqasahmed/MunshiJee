@@ -33,8 +33,15 @@ interface EasypaisaSettings {
 }
 
 interface WhatsAppSettings {
-  provider: 'barty' | 'wati';
-  config: any;
+  provider: 'meta';
+  config: {
+    accessToken?: string;
+    phoneNumberId?: string;
+    wabaId?: string;
+    apiVersion?: string;
+    templateName?: string;
+    templateLanguage?: string;
+  };
 }
 
 interface SubscriptionData {

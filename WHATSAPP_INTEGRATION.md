@@ -1,366 +1,456 @@
-# WhatsApp Integration - Implementation Summary
+# WhatsApp Integration Documentation
 
-## Overview
+This document explains how WhatsApp Business Cloud API (Meta) is integrated into MunshiJee for sending invoice notifications.
 
-WhatsApp messaging has been successfully integrated into MunshiJee using Barty.io and Wati.io APIs. This integration allows automatic invoice notifications to be sent to customers via WhatsApp, similar to existing email and SMS notifications.
-
-## What Has Been Implemented
-
-### 1. WhatsApp Service Layer ✅
-
-**`src/lib/whatsapp-service.ts`**
-- `WhatsAppService` class supporting two providers:
-  - **Barty.io**: Full-featured WhatsApp Business API
-  - **Wati.io**: Alternative WhatsApp Business API provider
-- Features:
-  - Automatic phone number formatting (Pakistan format with 92 prefix)
-  - Message sending with optional media attachments
-  - Provider-specific API implementations
-  - `getWhatsAppSettings()` helper to load configuration from database
-
-### 2. Database Schema Updates ✅
-
-**Updated User Model:**
-- Added `whatsappNotificationsEnabled` boolean field (default: false)
-- Migration applied: `20260414185024_add_whatsapp_notifications`
-
-### 3. Configuration Management ✅
-
-**Settings Storage:**
-- Provider type stored as `whatsapp_provider` ('barty' or 'wati')
-- Configuration stored as `whatsapp_config` with provider-specific fields:
-  - **Barty.io**: bearerToken, apiEndpoint, phoneNumberId (optional)
-  - **Wati.io**: accessToken, apiEndpoint
-
-**API Updates:**
-- Extended `/api/settings` (GET/PUT) to handle WhatsApp configuration
-- Extended `/api/settings/notifications` (PUT) to handle WhatsApp toggle
-- Extended `/api/user/settings` (GET) to return WhatsApp notification status
-- Added WhatsApp test in `/api/settings/test-notification` (POST)
-
-### 4. Super Admin Settings UI ✅
-
-**New "WhatsApp" Tab** (`/settings`)
-- Added to super admin settings alongside Email, SMS, and Payment Gateway tabs
-- Provider selection dropdown (Barty.io / Wati.io)
-- Dynamic form fields based on selected provider
-- Test message functionality
-- Settings stored globally in database (`userId: null`)
-
-**WhatsApp Settings Form Features:**
-- Provider-specific configuration fields
-- Real-time validation
-- Test connection button
-- Clear setup instructions
-- Links to provider dashboards
-
-### 5. User Notification Preferences ✅
-
-**Regular User Settings:**
-- Added WhatsApp notifications toggle in notification preferences section
-- Synchronized with backend via API
-- No quota limits for WhatsApp (unlike SMS)
-- Can be enabled/disabled independently from email and SMS
-
-### 6. Automated Invoice Notifications ✅
-
-**Integration in `notification-service.ts`:**
-- WhatsApp notifications automatically sent when:
-  - Invoice is created
-  - User has WhatsApp notifications enabled
-  - WhatsApp is configured by super admin
-  - Customer has a phone number
-- Message includes:
-  - Customer name
-  - Invoice number
-  - Amount
-  - Due date
-  - PDF download link
-- Notification logs created for audit trail
-
-### 7. Validation & Type Safety ✅
-
-**Zod Schemas:**
-- `whatsappBartySettingsSchema` - Validates Barty.io configuration
-- `whatsappWatiSettingsSchema` - Validates Wati.io configuration
-- `whatsappSettingsSchema` - Union schema for both providers
-- All TypeScript types properly exported
-
-## API Configuration
-
-### Barty.io Setup
-
-1. **Sign up**: Visit [Barty.io](https://barty.io) and create an account
-2. **Get Credentials**:
-   - Bearer Token (from API settings)
-   - API Endpoint (e.g., `https://api.barty.io/v1`)
-   - Phone Number ID (optional)
-3. **Configure in MunshiJee**:
-   - Login as super admin
-   - Go to Settings → WhatsApp tab
-   - Select "Barty.io" as provider
-   - Enter credentials
-   - Test connection
-   - Save settings
-
-### Wati.io Setup
-
-1. **Sign up**: Visit [Wati.io](https://app.wati.io) and create an account
-2. **Get Credentials**:
-   - Access Token (from API settings)
-   - API Endpoint (e.g., `https://live-server.wati.io`)
-3. **Configure in MunshiJee**:
-   - Login as super admin
-   - Go to Settings → WhatsApp tab
-   - Select "Wati.io" as provider
-   - Enter credentials
-   - Test connection
-   - Save settings
-
-## How to Use
-
-### For Super Admin - Initial Setup
-
-1. **Choose a Provider**:
-   - Barty.io: More flexible, supports media attachments
-   - Wati.io: Alternative provider with similar features
-
-2. **Get API Credentials**:
-   - Sign up with chosen provider
-   - Complete WhatsApp Business verification
-   - Obtain API credentials (bearer token or access token)
-
-3. **Configure in MunshiJee**:
-   - Navigate to Settings → WhatsApp tab
-   - Select your provider
-   - Enter credentials:
-     - For Barty.io: Bearer Token and API Endpoint
-     - For Wati.io: Access Token and API Endpoint
-   - Click "Send Test Message" to verify configuration
-   - Click "Save Settings" when test succeeds
-
-4. **Enable for Users**:
-   - Inform users they can now enable WhatsApp notifications
-   - Users control this in their notification preferences
-
-### For Users - Enabling WhatsApp Notifications
-
-1. **Navigate to Settings**:
-   - Go to your user Settings page
-   - Find "Notification Preferences" section
-
-2. **Enable WhatsApp**:
-   - Toggle "WhatsApp Notifications" switch to ON
-   - Click "Save Preferences"
-
-3. **Automatic Notifications**:
-   - When you create an invoice, customers automatically receive WhatsApp message
-   - Message includes invoice details and PDF download link
-   - Works alongside email and SMS notifications
-
-## Message Format
-
-WhatsApp messages sent to customers are concise and include only essential information:
+## Architecture Overview
 
 ```
-You have received an invoice of Rs.[Amount] from [Business/User Name]. Download PDF: [PDF Download Link]
+Invoice Creation (status=SENT)
+         ↓
+sendInvoiceNotification()
+         ↓
+Check Active Subscription & Quota
+         ↓
+WhatsAppService.send() → Meta Graph API
+         ↓
+NotificationLog (type=WHATSAPP)
+         ↓
+UserSubscription.whatsappUsed++
 ```
 
-**Example:**
-```
-You have received an invoice of Rs.5000.00 from ABC Trading Co. Download PDF: https://yourdomain.com/api/invoices/pdf/abc123
-```
+## Components
 
-This compressed format ensures:
-- Quick delivery
-- Easy readability on mobile
-- Direct access to PDF via link
-- Clear indication of sender and amount
+### 1. WhatsApp Service (`src/lib/whatsapp-service.ts`)
 
-## Phone Number Format
+Core service that handles communication with Meta's WhatsApp Business Cloud API.
 
-The system automatically formats phone numbers for Pakistan:
-- Input: `03001234567` → Output: `923001234567`
-- Input: `+923001234567` → Output: `923001234567`
-- Input: `3001234567` → Output: `923001234567`
+**Key Classes:**
 
-Numbers are automatically prefixed with `92` (Pakistan country code) if missing.
+- `WhatsAppService`: Main service class
+  - `send(payload)`: Sends template-based WhatsApp messages
+  - `sendText(to, message)`: Sends plain text (session-based, for debugging only)
 
-## Architecture
+**Configuration:**
 
-```
-Invoice Created
-  ↓
-notification-service.ts checks user preferences
-  ↓
-If whatsappNotificationsEnabled = true
-  ↓
-Load WhatsApp settings from database
-  ↓
-WhatsAppService formats message
-  ↓
-Call Barty.io or Wati.io API
-  ↓
-Send message to customer's phone
-  ↓
-Log notification in database
-```
-
-## Technical Details
-
-### Service Layer
-
-**WhatsAppService Class:**
 ```typescript
-class WhatsAppService {
-  constructor(whatsappConfig: WhatsAppConfig)
-  async send(payload: WhatsAppMessagePayload): Promise<void>
-  private async sendWithBarty(payload): Promise<void>
-  private async sendWithWati(payload): Promise<void>
-  private formatPhoneNumber(phoneNumber: string): string
+interface MetaConfig {
+  accessToken: string;        // Permanent system user token
+  phoneNumberId: string;      // WhatsApp Business Phone Number ID
+  wabaId?: string;            // WABA ID (optional)
+  apiVersion?: string;        // Default: v20.0
+  templateName: string;       // Approved template name
+  templateLanguage?: string;  // Default: en_US
 }
 ```
 
-### Database Schema
+**API Endpoint:**
 
-**User Model Addition:**
+```
+POST https://graph.facebook.com/{apiVersion}/{phoneNumberId}/messages
+```
+
+**Request Format:**
+
+```json
+{
+  "messaging_product": "whatsapp",
+  "to": "923001234567",
+  "type": "template",
+  "template": {
+    "name": "invoice_notification",
+    "language": { "code": "en_US" },
+    "components": [
+      {
+        "type": "body",
+        "parameters": [
+          { "type": "text", "text": "Customer Name" },
+          { "type": "text", "text": "INV-0001" },
+          { "type": "text", "text": "Rs.1000.00" },
+          { "type": "text", "text": "Dec 31, 2026" }
+        ]
+      },
+      {
+        "type": "button",
+        "sub_type": "url",
+        "index": "0",
+        "parameters": [
+          { "type": "text", "text": "https://example.com/invoice.pdf" }
+        ]
+      }
+    ]
+  }
+}
+```
+
+### 2. Notification Service (`src/lib/notification-service.ts`)
+
+Orchestrates sending notifications via multiple channels (Email, SMS, WhatsApp).
+
+**Key Function:**
+
+```typescript
+async function sendInvoiceNotification(invoiceId: string): Promise<void>
+```
+
+**Flow:**
+
+1. Fetch invoice with customer and user details
+2. Check for active subscription
+3. Generate PDF token and download URL
+4. Send Email (if enabled and quota available)
+5. Send SMS (if enabled and quota available)
+6. Send WhatsApp (if enabled and quota available)
+7. Auto-disable channels when quota exhausted
+
+**WhatsApp-specific logic:**
+
+```typescript
+if (
+  invoice.user.whatsappNotificationsEnabled &&
+  whatsappSettings &&
+  invoice.customer.phone &&
+  activeSubscription.whatsappUsed < activeSubscription.plan.whatsappLimit
+) {
+  await sendWhatsAppNotification(...);
+} else if (whatsappUsed >= whatsappLimit) {
+  // Auto-disable WhatsApp notifications
+  await prisma.user.update({
+    where: { id: invoice.userId },
+    data: { whatsappNotificationsEnabled: false },
+  });
+}
+```
+
+### 3. Notification Logging
+
+Every WhatsApp attempt is logged to the `NotificationLog` table:
+
+**Schema:**
+
 ```prisma
-model User {
-  // ... existing fields
-  whatsappNotificationsEnabled Boolean @default(false)
+model NotificationLog {
+  id           String             @id @default(cuid())
+  invoiceId    String
+  invoice      Invoice            @relation(...)
+  type         NotificationType   // EMAIL, SMS, WHATSAPP
+  provider     String             // "meta"
+  recipient    String             // Phone number
+  status       NotificationStatus // PENDING, SENT, FAILED
+  errorMessage String?
+  sentAt       DateTime?
+  createdAt    DateTime           @default(now())
 }
 ```
 
-**Settings Storage:**
-- Key: `whatsapp_provider` → Value: `'barty'` or `'wati'`
-- Key: `whatsapp_config` → Value: JSON with credentials
+**Logging Flow:**
 
-### API Endpoints
+1. Create log entry with status `PENDING`
+2. Attempt to send message
+3. Update log with `SENT` or `FAILED` status
+4. Store error message if failed
 
-| Endpoint | Method | Purpose |
-|----------|--------|---------|
-| `/api/settings` | GET | Retrieve WhatsApp configuration |
-| `/api/settings` | PUT | Save WhatsApp configuration |
-| `/api/settings/notifications` | PUT | Update user WhatsApp toggle |
-| `/api/user/settings` | GET | Get user notification preferences |
-| `/api/settings/test-notification` | POST | Test WhatsApp configuration |
+### 4. Settings Management
 
-## Notification Logs
+#### Super Admin Settings UI
 
-All WhatsApp notifications are logged in the `NotificationLog` table:
-- Invoice ID
-- Type: SMS (used for WhatsApp tracking)
-- Provider: 'barty' or 'wati'
-- Recipient phone number
-- Status: PENDING, SENT, or FAILED
-- Error message (if failed)
-- Sent timestamp
+**Location:** `/settings` (WhatsApp tab)
+
+**Component:** `src/components/settings/whatsapp-settings-form.tsx`
+
+**Stored in Database:**
+
+```sql
+-- Two settings records per provider
+INSERT INTO "Settings" (key, value, userId)
+VALUES 
+  ('whatsapp_provider', '"meta"', NULL),
+  ('whatsapp_config', '{"accessToken": "...", "phoneNumberId": "...", ...}', NULL);
+```
+
+#### User Settings
+
+**Location:** `/settings` (Notification Preferences)
+
+**User Toggle:**
+
+```typescript
+User {
+  whatsappNotificationsEnabled: boolean
+}
+```
+
+Users can enable/disable WhatsApp notifications if:
+- Super Admin has configured WhatsApp settings
+- User has an active subscription with WhatsApp quota
+
+### 5. Invoice Creation Trigger
+
+**Location:** `src/app/api/invoices/route.ts`
+
+```typescript
+const invoice = await prisma.invoice.create({ ... });
+
+if (invoice.status === "SENT") {
+  sendInvoiceNotification(invoice.id).catch((error) => {
+    console.error("Failed to send invoice notification:", error);
+  });
+}
+```
+
+**Important:** Notifications are ONLY sent for invoices with status `SENT`, not `DRAFT`.
+
+### 6. Subscription Quota Management
+
+**Database Schema:**
+
+```prisma
+model UserSubscription {
+  whatsappUsed  Int @default(0)
+  plan {
+    whatsappLimit Int
+  }
+}
+```
+
+**Quota Check:**
+
+```typescript
+if (subscription.whatsappUsed < subscription.plan.whatsappLimit) {
+  // Send message
+  await prisma.userSubscription.update({
+    where: { id: subscription.id },
+    data: { whatsappUsed: { increment: 1 } },
+  });
+}
+```
+
+**Auto-disable when quota exhausted:**
+
+```typescript
+if (whatsappUsed >= whatsappLimit) {
+  await prisma.user.update({
+    where: { id: userId },
+    data: { whatsappNotificationsEnabled: false },
+  });
+}
+```
+
+## Message Template Structure
+
+WhatsApp requires pre-approved templates. MunshiJee uses this structure:
+
+**Template Name:** `invoice_notification` (configurable)
+
+**Template Body:**
+```
+Hi {{1}}, your invoice {{2}} for {{3}} is ready. Due date: {{4}}.
+```
+
+**Parameters:**
+1. Customer Name
+2. Invoice Number
+3. Amount (formatted as Rs.X.XX)
+4. Due Date (formatted)
+
+**Optional Button:**
+- Type: URL
+- Text: "Download PDF"
+- Dynamic URL: Invoice PDF download link
 
 ## Error Handling
 
-The system handles errors gracefully:
-- **Configuration Missing**: Silent skip, no error shown to user
-- **API Errors**: Logged with details, notification marked as FAILED
-- **Invalid Phone Number**: Logged, notification marked as FAILED
-- **Network Errors**: Logged with full error details
+### Service-Level Errors
 
-Users don't see errors unless testing configuration in admin settings.
+```typescript
+try {
+  await whatsappService.send(payload);
+} catch (error) {
+  // Log error with details
+  await updateNotificationLog(logId, 'FAILED', error.message);
+  // Don't throw - avoid breaking invoice creation
+  console.error('Failed to send WhatsApp notification:', error);
+}
+```
+
+### Common Error Scenarios
+
+1. **Invalid Access Token**
+   - Status: 401
+   - Fix: Generate new token with correct permissions
+
+2. **Invalid Phone Number ID**
+   - Status: 400
+   - Fix: Verify Phone Number ID in Meta dashboard
+
+3. **Template Not Found**
+   - Status: 400
+   - Fix: Ensure template is approved and name matches
+
+4. **Recipient Not Allowed**
+   - Status: 400
+   - Fix: Add test phone number or use production number
+
+5. **Message Quality Rating Low**
+   - Status: 403
+   - Fix: Improve template quality, review business verification
+
+### Graph API Error Format
+
+```json
+{
+  "error": {
+    "message": "Invalid OAuth access token",
+    "type": "OAuthException",
+    "code": 190,
+    "error_subcode": 463,
+    "fbtrace_id": "..."
+  }
+}
+```
+
+## Testing
+
+### Test Endpoint
+
+**Location:** `src/app/api/settings/test-notification/route.ts`
+
+**Usage:**
+
+```bash
+POST /api/settings/test-notification
+Content-Type: application/json
+
+{
+  "type": "whatsapp",
+  "config": {
+    "provider": "meta",
+    "config": { ... }
+  },
+  "phoneNumber": "923001234567"
+}
+```
+
+**Test Payload:**
+
+```typescript
+{
+  customerName: session.user.name || 'Test Customer',
+  invoiceNumber: 'TEST-0001',
+  amount: 'Rs.1000.00',
+  dueDate: '30 days from now',
+  pdfDownloadUrl: 'https://example.com/invoice.pdf'
+}
+```
+
+### Monitoring
+
+**Admin Dashboard:** `/admin/notifications`
+
+View all notification logs with:
+- Notification type (Email, SMS, WhatsApp)
+- Status (Pending, Sent, Failed)
+- Recipient
+- Timestamp
+- Error messages (if failed)
+
+## Quota Management
+
+See [WHATSAPP_QUOTAS.md](WHATSAPP_QUOTAS.md) for detailed information about:
+- Meta's conversation-based pricing
+- Messaging tier limits
+- Quality rating requirements
+- Best practices
 
 ## Security Considerations
 
-1. **Credentials Storage**: API tokens stored securely in database
-2. **Super Admin Only**: Only super admins can configure WhatsApp
-3. **User Control**: Users control their own notification preferences
-4. **Audit Trail**: All notifications logged with status
-5. **Phone Privacy**: Customer phone numbers only used for notifications
+1. **Access Token Storage**
+   - Stored in database `Settings` table
+   - Only accessible to Super Admin
+   - Never exposed in API responses to regular users
 
-## Differences from SMS
+2. **Phone Number Validation**
+   - Formatted to remove special characters
+   - Pakistan-aware (auto-adds country code 92)
+   - Strips leading + for Meta API compatibility
 
-| Feature | SMS | WhatsApp |
-|---------|-----|----------|
-| Quota Limits | Yes (based on plan) | No limits |
-| Provider Cost | Per message billing | Often free or flat rate |
-| Message Length | 160 chars limit | Much longer messages |
-| Rich Media | Not supported | Supported (images, PDFs) |
-| Read Receipts | No | Yes (if enabled) |
-| Two-way Chat | No | Possible (not implemented) |
+3. **Error Messages**
+   - Sanitized before showing to users
+   - Full errors logged server-side only
+   - No sensitive data in error responses
 
-## Testing Checklist
+## Performance Considerations
 
-- [ ] Configure Barty.io or Wati.io credentials
-- [ ] Test connection from settings page
-- [ ] Enable WhatsApp notifications for a test user
-- [ ] Create a test invoice
-- [ ] Verify WhatsApp message received
-- [ ] Check notification log in database
-- [ ] Test with different phone number formats
-- [ ] Verify error handling for invalid numbers
-- [ ] Test switching between providers
-- [ ] Verify notifications work alongside email/SMS
+1. **Async Notification Sending**
+   - Notifications sent asynchronously (fire-and-forget)
+   - Doesn't block invoice creation
+   - Errors logged but don't fail the request
 
-## Troubleshooting
+2. **Database Logging**
+   - All notifications logged for audit trail
+   - Indexed by invoiceId, status, createdAt
+   - Enables analytics and debugging
 
-### "Failed to send test WhatsApp message"
-- **Solution**: Verify API credentials are correct
-- Check API endpoint URL is valid
-- Ensure provider account is active
-- Check network connectivity
-
-### "WhatsApp message not received"
-- **Solution**: Verify customer phone number is correct
-- Check phone number is in WhatsApp format (923xxxxxxxxx)
-- Ensure recipient has WhatsApp installed
-- Check notification logs for error details
-
-### "Configuration not saving"
-- **Solution**: Ensure all required fields are filled
-- Verify you're logged in as super admin
-- Check browser console for errors
-- Try refreshing the page
+3. **Rate Limiting**
+   - Meta has API rate limits (80 messages/second per phone number)
+   - Bulk invoices sent sequentially (not in parallel)
+   - Consider implementing queue for high-volume use cases
 
 ## Future Enhancements
 
-Possible future improvements:
-1. **Rich Media Support**: Send invoice PDFs directly via WhatsApp
-2. **Message Templates**: Pre-approved WhatsApp Business templates
-3. **Two-way Communication**: Receive replies from customers
-4. **Message Scheduling**: Send reminders before due dates
-5. **Delivery Reports**: Track message delivery and read status
-6. **Multiple Languages**: Support messages in different languages
-7. **Quota Tracking**: Optional usage tracking and limits
+Potential improvements:
 
-## Files Created/Modified
+1. **Template Management UI**
+   - Allow Super Admin to manage multiple templates
+   - Switch templates per invoice type
 
-### Created:
-- `src/lib/whatsapp-service.ts` - WhatsApp service layer
+2. **Message Scheduling**
+   - Queue messages for optimal delivery times
+   - Retry failed messages with exponential backoff
 
-### Modified:
-- `src/prisma/schema.prisma` - Added whatsappNotificationsEnabled field
-- `src/lib/validators.ts` - Added WhatsApp validation schemas
-- `src/lib/notification-service.ts` - Integrated WhatsApp notifications
-- `src/app/api/settings/route.ts` - Extended for WhatsApp config
-- `src/app/api/settings/notifications/route.ts` - Added WhatsApp toggle
-- `src/app/api/user/settings/route.ts` - Return WhatsApp status
-- `src/app/api/settings/test-notification/route.ts` - Added WhatsApp test
-- `src/components/settings/whatsapp-settings-form.tsx` - Settings UI
-- `src/app/settings/page.tsx` - Added WhatsApp tab and user toggle
+3. **Rich Media Support**
+   - Send PDF attachments directly
+   - Include images/logos in messages
 
-## Support
+4. **Conversation Tracking**
+   - Track 24-hour conversation windows
+   - Optimize for conversation-based pricing
 
-**For Barty.io Issues:**
-- Documentation: [Barty.io Docs](https://docs.barty.io)
-- Support: Contact via Barty.io dashboard
+5. **Analytics Dashboard**
+   - Delivery rates by channel
+   - Customer engagement metrics
+   - Cost analysis per notification
 
-**For Wati.io Issues:**
-- Documentation: [Wati.io Docs](https://docs.wati.io)
-- Support: Contact via Wati.io dashboard
+## Troubleshooting
 
-**For Application Issues:**
-- Review notification logs in database
-- Check browser console for errors
-- Verify super admin has configured WhatsApp
-- Contact your development team
+### Notifications Not Sending
 
----
+1. Check Super Admin WhatsApp settings configured
+2. Verify user has WhatsApp notifications enabled
+3. Confirm active subscription with available quota
+4. Review notification logs for error messages
+5. Verify invoice status is `SENT` (not `DRAFT`)
 
-**WhatsApp integration complete! Start sending invoice notifications via WhatsApp by configuring your provider credentials.**
+### Template Issues
+
+1. Ensure template is approved in Meta dashboard
+2. Verify template name matches exactly (case-sensitive)
+3. Check template language code is correct
+4. Confirm template has required 4 body parameters
+
+### Quota Exhausted
+
+1. User's WhatsApp notifications will be auto-disabled
+2. Check subscription status: `/api/subscription/current`
+3. Upgrade subscription or wait for renewal
+4. Admin can manually reset quotas in database if needed
+
+## Related Files
+
+- `src/lib/whatsapp-service.ts` - Core service
+- `src/lib/notification-service.ts` - Orchestration
+- `src/components/settings/whatsapp-settings-form.tsx` - Admin UI
+- `src/app/api/settings/test-notification/route.ts` - Test endpoint
+- `src/app/api/invoices/route.ts` - Invoice creation trigger
+- `src/prisma/schema.prisma` - Database schema
+- `WHATSAPP_API_SETUP.md` - Setup guide
+- `WHATSAPP_QUOTAS.md` - Quota information

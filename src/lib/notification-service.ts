@@ -220,7 +220,7 @@ async function sendSmsNotification(
 
 async function createNotificationLog(data: {
   invoiceId: string;
-  type: 'EMAIL' | 'SMS';
+  type: 'EMAIL' | 'SMS' | 'WHATSAPP';
   provider: string;
   recipient: string;
 }): Promise<string> {
@@ -330,7 +330,7 @@ async function sendWhatsAppNotification(
 ): Promise<void> {
   const logId = await createNotificationLog({
     invoiceId,
-    type: 'SMS',
+    type: 'WHATSAPP',
     provider: whatsappSettings.provider,
     recipient: recipientPhone,
   });
@@ -338,11 +338,13 @@ async function sendWhatsAppNotification(
   try {
     const whatsappService = new WhatsAppService(whatsappSettings);
     
-    const whatsappMessage = `You have received an invoice of ${invoiceData.amount} from ${senderName}. Download PDF: ${invoiceData.pdfDownloadUrl}`;
-
     await whatsappService.send({
       to: recipientPhone,
-      message: whatsappMessage,
+      customerName: invoiceData.customerName,
+      invoiceNumber: invoiceData.invoiceNumber,
+      amount: invoiceData.amount,
+      dueDate: invoiceData.dueDate,
+      pdfDownloadUrl: invoiceData.pdfDownloadUrl,
     });
 
     await updateNotificationLog(logId, 'SENT', null);

@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (invoice.status !== "DRAFT") {
+    if (invoice.status === "SENT") {
       sendInvoiceNotification(invoice.id).catch((error) => {
         console.error("Failed to send invoice notification:", error);
       });

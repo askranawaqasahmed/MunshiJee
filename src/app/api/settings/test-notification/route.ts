@@ -83,9 +83,17 @@ export async function POST(request: NextRequest) {
         phoneNumber,
       });
 
+      const today = new Date();
+      const dueDate = new Date(today);
+      dueDate.setDate(dueDate.getDate() + 30);
+
       await whatsappService.send({
         to: phoneNumber,
-        message: `Test message: You have received an invoice of Rs.1000.00 from ${session.user.name || 'MunshiJee'}. Download PDF: [test-link]`,
+        customerName: session.user.name || 'Test Customer',
+        invoiceNumber: 'TEST-0001',
+        amount: 'Rs.1000.00',
+        dueDate: dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        pdfDownloadUrl: 'https://example.com/invoice.pdf',
       });
 
       return NextResponse.json({

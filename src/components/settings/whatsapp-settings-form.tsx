@@ -5,23 +5,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface WhatsAppSettings {
-  provider: 'barty' | 'wati';
+  provider: 'meta';
   config: {
-    bearerToken?: string;
     accessToken?: string;
-    apiEndpoint?: string;
     phoneNumberId?: string;
+    wabaId?: string;
+    apiVersion?: string;
     templateName?: string;
+    templateLanguage?: string;
   };
 }
 
@@ -32,8 +26,10 @@ interface WhatsAppSettingsFormProps {
 }
 
 export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsAppSettingsFormProps) {
-  const [provider, setProvider] = useState<'barty' | 'wati'>(initialSettings?.provider || 'barty');
-  const [config, setConfig] = useState(initialSettings?.config || {});
+  const [config, setConfig] = useState(initialSettings?.config || {
+    apiVersion: 'v20.0',
+    templateLanguage: 'en_US',
+  });
   const [testPhoneNumber, setTestPhoneNumber] = useState('');
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
@@ -41,8 +37,11 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
 
   useEffect(() => {
     if (initialSettings) {
-      setProvider(initialSettings.provider);
-      setConfig(initialSettings.config);
+      setConfig({
+        ...initialSettings.config,
+        apiVersion: initialSettings.config.apiVersion || 'v20.0',
+        templateLanguage: initialSettings.config.templateLanguage || 'en_US',
+      });
     }
   }, [initialSettings]);
 
@@ -50,20 +49,13 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
     setSaving(true);
     setMessage(null);
     try {
-      // Clean the config before saving
       const cleanedConfig = { ...config };
       
-      // Remove "Bearer " prefix from access token if present (Wati)
-      if (provider === 'wati' && cleanedConfig.accessToken) {
+      if (cleanedConfig.accessToken) {
         cleanedConfig.accessToken = cleanedConfig.accessToken.replace(/^Bearer\s+/i, '').trim();
       }
-      
-      // Remove "Bearer " prefix from bearer token if present (Barty)
-      if (provider === 'barty' && cleanedConfig.bearerToken) {
-        cleanedConfig.bearerToken = cleanedConfig.bearerToken.replace(/^Bearer\s+/i, '').trim();
-      }
 
-      await onSave({ provider, config: cleanedConfig });
+      await onSave({ provider: 'meta', config: cleanedConfig });
       setMessage({ type: 'success', text: 'WhatsApp settings saved successfully!' });
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to save WhatsApp settings.' });
@@ -81,20 +73,13 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
     setTesting(true);
     setMessage(null);
     try {
-      // Clean the config before testing
       const cleanedConfig = { ...config };
       
-      // Remove "Bearer " prefix from access token if present (Wati)
-      if (provider === 'wati' && cleanedConfig.accessToken) {
+      if (cleanedConfig.accessToken) {
         cleanedConfig.accessToken = cleanedConfig.accessToken.replace(/^Bearer\s+/i, '').trim();
       }
-      
-      // Remove "Bearer " prefix from bearer token if present (Barty)
-      if (provider === 'barty' && cleanedConfig.bearerToken) {
-        cleanedConfig.bearerToken = cleanedConfig.bearerToken.replace(/^Bearer\s+/i, '').trim();
-      }
 
-      await onTest({ provider, config: cleanedConfig }, testPhoneNumber);
+      await onTest({ provider: 'meta', config: cleanedConfig }, testPhoneNumber);
       setMessage({ type: 'success', text: 'Test message sent successfully! Check your WhatsApp.' });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Failed to send test message.' });
@@ -104,20 +89,15 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
   };
 
   const isConfigComplete = () => {
-    if (provider === 'barty') {
-      return config.bearerToken && config.apiEndpoint;
-    } else if (provider === 'wati') {
-      return config.accessToken && config.apiEndpoint;
-    }
-    return false;
+    return config.accessToken && config.phoneNumberId && config.templateName;
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>WhatsApp Notifications</CardTitle>
+        <CardTitle>WhatsApp Notifications (Meta Cloud API)</CardTitle>
         <CardDescription>
-          Configure WhatsApp provider to send invoice notifications via WhatsApp
+          Configure Meta (Facebook) WhatsApp Business Cloud API to send invoice notifications
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -139,164 +119,124 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
         )}
 
         <div className="space-y-2">
-          <Label htmlFor="provider">WhatsApp Provider</Label>
-          <Select value={provider} onValueChange={(v) => setProvider(v as 'barty' | 'wati')}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="barty">Barty.io</SelectItem>
-              <SelectItem value="wati">Wati.io</SelectItem>
-            </SelectContent>
-          </Select>
+          <Label htmlFor="accessToken">Access Token *</Label>
+          <Input
+            id="accessToken"
+            type="password"
+            placeholder="Your Meta WhatsApp access token"
+            value={config.accessToken || ''}
+            onChange={(e) => setConfig({ ...config, accessToken: e.target.value })}
+          />
           <p className="text-sm text-muted-foreground">
-            Select your WhatsApp Business API provider
+            Permanent access token from your Meta Business App (System User token recommended)
           </p>
         </div>
 
-        {provider === 'barty' && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="bearerToken">Bearer Token</Label>
-              <Input
-                id="bearerToken"
-                type="password"
-                placeholder="Your Barty.io bearer token"
-                value={config.bearerToken || ''}
-                onChange={(e) => setConfig({ ...config, bearerToken: e.target.value })}
-              />
-              <p className="text-sm text-muted-foreground">
-                Get your bearer token from{' '}
-                <a
-                  href="https://barty.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Barty.io Dashboard
-                </a>
-              </p>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="phoneNumberId">Phone Number ID *</Label>
+          <Input
+            id="phoneNumberId"
+            type="text"
+            placeholder="123456789012345"
+            value={config.phoneNumberId || ''}
+            onChange={(e) => setConfig({ ...config, phoneNumberId: e.target.value })}
+          />
+          <p className="text-sm text-muted-foreground">
+            Your WhatsApp Business Phone Number ID from the Meta Business dashboard
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="apiEndpoint">API Endpoint</Label>
-              <Input
-                id="apiEndpoint"
-                type="url"
-                placeholder="https://api.barty.io/v1"
-                value={config.apiEndpoint || ''}
-                onChange={(e) => setConfig({ ...config, apiEndpoint: e.target.value })}
-              />
-              <p className="text-sm text-muted-foreground">
-                Your Barty.io API endpoint URL
-              </p>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="wabaId">WhatsApp Business Account ID (Optional)</Label>
+          <Input
+            id="wabaId"
+            type="text"
+            placeholder="123456789012345"
+            value={config.wabaId || ''}
+            onChange={(e) => setConfig({ ...config, wabaId: e.target.value })}
+          />
+          <p className="text-sm text-muted-foreground">
+            Your WABA ID (for reference only, not used in API calls)
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="phoneNumberId">Phone Number ID (Optional)</Label>
-              <Input
-                id="phoneNumberId"
-                type="text"
-                placeholder="Your WhatsApp phone number ID"
-                value={config.phoneNumberId || ''}
-                onChange={(e) => setConfig({ ...config, phoneNumberId: e.target.value })}
-              />
-            </div>
-          </>
-        )}
+        <div className="space-y-2">
+          <Label htmlFor="apiVersion">API Version</Label>
+          <Input
+            id="apiVersion"
+            type="text"
+            placeholder="v20.0"
+            value={config.apiVersion || 'v20.0'}
+            onChange={(e) => setConfig({ ...config, apiVersion: e.target.value })}
+          />
+          <p className="text-sm text-muted-foreground">
+            Meta Graph API version (default: v20.0)
+          </p>
+        </div>
 
-        {provider === 'wati' && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="accessToken">Access Token</Label>
-              <Input
-                id="accessToken"
-                type="password"
-                placeholder="Your Wati.io access token"
-                value={config.accessToken || ''}
-                onChange={(e) => setConfig({ ...config, accessToken: e.target.value })}
-              />
-              <p className="text-sm text-muted-foreground">
-                Get your access token from{' '}
-                <a
-                  href="https://app.wati.io"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline"
-                >
-                  Wati.io Dashboard
-                </a>
-              </p>
-            </div>
+        <div className="space-y-2">
+          <Label htmlFor="templateName">Template Name *</Label>
+          <Input
+            id="templateName"
+            type="text"
+            placeholder="invoice_notification"
+            value={config.templateName || ''}
+            onChange={(e) => setConfig({ ...config, templateName: e.target.value })}
+          />
+          <p className="text-sm text-muted-foreground">
+            Name of your approved WhatsApp message template for invoice notifications
+          </p>
+        </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="apiEndpoint">API Endpoint</Label>
-              <Input
-                id="apiEndpoint"
-                type="url"
-                placeholder="https://live-mt-server.wati.io/101344347"
-                value={config.apiEndpoint || ''}
-                onChange={(e) => setConfig({ ...config, apiEndpoint: e.target.value })}
-              />
-              <p className="text-sm text-yellow-600 font-medium">
-                ⚠️ Important: Include your account ID at the end (e.g., /101344347)
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Copy the exact URL from your Wati.io API Docs page
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="templateName">Template Name (Optional)</Label>
-              <Input
-                id="templateName"
-                type="text"
-                placeholder="invoice_notification"
-                value={config.templateName || ''}
-                onChange={(e) => setConfig({ ...config, templateName: e.target.value })}
-              />
-              <p className="text-sm text-muted-foreground">
-                Name of your approved WhatsApp template for invoice notifications (leave empty to use session messages only)
-              </p>
-            </div>
-          </>
-        )}
-
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h4 className="font-semibold text-blue-900 mb-2">Important: Configuration Tips</h4>
-          <div className="space-y-2 text-sm text-blue-800">
-            {provider === 'wati' && (
-              <>
-                <p className="font-medium">For Wati.io:</p>
-                <ul className="list-disc list-inside ml-2 space-y-1">
-                  <li>Copy the EXACT API Endpoint from your Wati dashboard (including account ID)</li>
-                  <li>Example: <code className="bg-blue-100 px-1 rounded">https://live-mt-server.wati.io/101344347</code></li>
-                  <li>Remove "Bearer " from the access token if present (just paste the token itself)</li>
-                  <li>Test phone number must have an active WhatsApp session with your Wati number</li>
-                </ul>
-              </>
-            )}
-            {provider === 'barty' && (
-              <>
-                <p className="font-medium">For Barty.io:</p>
-                <ul className="list-disc list-inside ml-2 space-y-1">
-                  <li>Use the base API endpoint provided by Barty</li>
-                  <li>Include the Bearer token as provided</li>
-                </ul>
-              </>
-            )}
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="templateLanguage">Template Language</Label>
+          <Input
+            id="templateLanguage"
+            type="text"
+            placeholder="en_US"
+            value={config.templateLanguage || 'en_US'}
+            onChange={(e) => setConfig({ ...config, templateLanguage: e.target.value })}
+          />
+          <p className="text-sm text-muted-foreground">
+            Language code of your template (default: en_US)
+          </p>
         </div>
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <h4 className="font-semibold text-blue-900 mb-2">Setup Instructions</h4>
           <ol className="list-decimal list-inside space-y-1 text-sm text-blue-800">
-            <li>Register for a WhatsApp Business API account with {provider === 'barty' ? 'Barty.io' : 'Wati.io'}</li>
-            <li>Complete the verification process and get your credentials</li>
-            <li>Enter the credentials above</li>
-            <li>Test the connection before saving</li>
-            <li>Enable WhatsApp notifications for users in their notification preferences</li>
+            <li>Create a Meta Business App at{' '}
+              <a
+                href="https://developers.facebook.com/apps"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                developers.facebook.com
+              </a>
+            </li>
+            <li>Add the WhatsApp product and complete the setup wizard</li>
+            <li>Create a System User and generate a permanent access token with <code className="bg-blue-100 px-1 rounded">whatsapp_business_messaging</code> permission</li>
+            <li>Get your Phone Number ID from the WhatsApp Business API settings</li>
+            <li>Create and submit a message template for approval (must include 4 body parameters: customer name, invoice number, amount, due date)</li>
+            <li>Enter your credentials above and test the connection</li>
           </ol>
+        </div>
+
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+          <h4 className="font-semibold text-yellow-900 mb-2">Important: Template Requirements</h4>
+          <div className="space-y-2 text-sm text-yellow-800">
+            <p>Your WhatsApp message template must include these body parameters in order:</p>
+            <ul className="list-disc list-inside ml-2 space-y-1">
+              <li><code className="bg-yellow-100 px-1 rounded">{'{{1}}'}</code> - Customer Name</li>
+              <li><code className="bg-yellow-100 px-1 rounded">{'{{2}}'}</code> - Invoice Number</li>
+              <li><code className="bg-yellow-100 px-1 rounded">{'{{3}}'}</code> - Amount</li>
+              <li><code className="bg-yellow-100 px-1 rounded">{'{{4}}'}</code> - Due Date</li>
+            </ul>
+            <p className="mt-2">
+              Example template body: "Hi {'{{1}}'}, your invoice {'{{2}}'} for {'{{3}}'} is ready. Due date: {'{{4}}'}."
+            </p>
+          </div>
         </div>
 
         <div className="space-y-4">
@@ -331,20 +271,8 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
         {!isConfigComplete() && (
           <p className="text-sm text-yellow-600 flex items-center gap-2">
             <AlertCircle className="h-4 w-4" />
-            Please fill in all required fields to enable saving and testing
+            Please fill in all required fields (*) to enable saving and testing
           </p>
-        )}
-
-        {provider === 'wati' && config.apiEndpoint && !config.apiEndpoint.match(/\/\d+\s*$/) && (
-          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-            <p className="text-sm text-yellow-800 flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
-              <span>
-                <strong>Warning:</strong> Your API endpoint might be missing the account ID. 
-                It should end with your account number (e.g., /101344347)
-              </span>
-            </p>
-          </div>
         )}
       </CardContent>
     </Card>

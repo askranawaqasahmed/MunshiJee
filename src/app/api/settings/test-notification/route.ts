@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
         message: 'Test SMS sent successfully',
       });
     } else if (type === 'whatsapp') {
-      const { phoneNumber } = body;
+      const { phoneNumber, templateType } = body;
       
       if (!phoneNumber) {
         return NextResponse.json(
@@ -76,25 +76,82 @@ export async function POST(request: NextRequest) {
       }
 
       const whatsappConfig = config as WhatsAppConfig;
-      const whatsappService = new WhatsAppService(whatsappConfig);
+      const testType = templateType || 'hello_world';
 
-      console.log('Testing WhatsApp with config:', {
+      console.log('Testing WhatsApp:', {
         provider: whatsappConfig.provider,
+        testType,
         phoneNumber,
       });
 
-      const today = new Date();
-      const dueDate = new Date(today);
-      dueDate.setDate(dueDate.getDate() + 30);
+      // Format phone number
+      const formattedPhone = phoneNumber.replace(/\D/g, '').replace(/^0/, '92').replace(/^(?!92)/, '92');
 
-      await whatsappService.send({
-        to: phoneNumber,
-        customerName: session.user.name || 'Test Customer',
-        invoiceNumber: 'TEST-0001',
-        amount: 'Rs.1000.00',
-        dueDate: dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        pdfDownloadUrl: 'https://example.com/invoice.pdf',
-      });
+      // Test hello_world template (no parameters)
+      if (testType === 'hello_world') {
+        const response = await fetch(
+          `https://graph.facebook.com/${whatsappConfig.config.apiVersion || 'v20.0'}/${whatsappConfig.config.phoneNumberId}/messages`,
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${whatsappConfig.config.accessToken}`,
+            },
+            body: JSON.stringify({
+              messaging_product: 'whatsapp',
+              to: formattedPhone,
+              type: 'template',
+              template: {
+                name: 'hello_world',
+                language: {
+                  code: 'en_US',
+                },
+              },
+            }),
+          }
+        );
+
+        const responseData = await response.json();
+
+        if (!response.ok) {
+          const errorDetails = responseData.error 
+            ? `${responseData.error.message} (code: ${responseData.error.code})`
+            : JSON.stringify(responseData);
+          
+          throw new Error(`Meta WhatsApp API error: ${response.status} - ${errorDetails}`);
+        }
+
+        console.log('WhatsApp hello_world sent:', responseData);
+      } else {
+        // Test invoice_generation template with parameters
+        // Force use invoice_generation template for this test
+        const invoiceConfig = {
+          ...whatsappConfig.config,
+          templateName: 'invoice_generation',
+        };
+        
+        const whatsappService = new WhatsAppService({
+          provider: 'meta',
+          config: invoiceConfig,
+        });
+        
+        const today = new Date();
+        const dueDate = new Date(today);
+        dueDate.setDate(dueDate.getDate() + 30);
+        
+        // Format date as "10/02/2026" or "Dec 31, 2026"
+        const formattedDate = `${dueDate.getDate().toString().padStart(2, '0')}/${(dueDate.getMonth() + 1).toString().padStart(2, '0')}/${dueDate.getFullYear()}`;
+
+        await whatsappService.send({
+          to: phoneNumber,
+          businessName: 'MunshiJee',
+          customerName: session.user.name || 'Rana Waqas',
+          invoiceNumber: 'INV-0001',
+          amount: 'Rs.1000',
+          dueDate: formattedDate,
+          paymentUrl: 'clxxx123456789test',
+        });
+      }
 
       return NextResponse.json({
         success: true,

@@ -340,11 +340,12 @@ async function sendWhatsAppNotification(
     
     await whatsappService.send({
       to: recipientPhone,
+      businessName: senderName,
       customerName: invoiceData.customerName,
       invoiceNumber: invoiceData.invoiceNumber,
       amount: invoiceData.amount,
       dueDate: invoiceData.dueDate,
-      pdfDownloadUrl: invoiceData.pdfDownloadUrl,
+      paymentUrl: invoiceId,
     });
 
     await updateNotificationLog(logId, 'SENT', null);

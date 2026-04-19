@@ -335,22 +335,6 @@ export default function SettingsPage() {
     setWhatsappSettings(settings);
   };
 
-  const handleTestWhatsApp = async (settings: WhatsAppSettings, phoneNumber: string) => {
-    const response = await fetch('/api/settings/test-notification', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        type: 'whatsapp',
-        config: settings,
-        phoneNumber: phoneNumber,
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.details || 'Failed to send test WhatsApp message');
-    }
-  };
 
   if (loading) {
     return (
@@ -400,7 +384,6 @@ export default function SettingsPage() {
             <WhatsAppSettingsForm
               initialSettings={whatsappSettings}
               onSave={handleSaveWhatsApp}
-              onTest={handleTestWhatsApp}
             />
           </TabsContent>
 

@@ -22,15 +22,15 @@ interface WhatsAppSettings {
 interface WhatsAppSettingsFormProps {
   initialSettings?: WhatsAppSettings;
   onSave: (settings: WhatsAppSettings) => Promise<void>;
-  onTest: (settings: WhatsAppSettings, phoneNumber: string) => Promise<void>;
 }
 
-export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsAppSettingsFormProps) {
+export function WhatsAppSettingsForm({ initialSettings, onSave }: WhatsAppSettingsFormProps) {
   const [config, setConfig] = useState(initialSettings?.config || {
     apiVersion: 'v20.0',
     templateLanguage: 'en_US',
+    templateName: 'invoice_generation',
   });
-  const [testPhoneNumber, setTestPhoneNumber] = useState('');
+  const [testPhoneNumber, setTestPhoneNumber] = useState('923003487592');
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
@@ -64,7 +64,7 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
     }
   };
 
-  const handleTest = async () => {
+  const handleTest = async (templateType: 'hello_world' | 'invoice') => {
     if (!testPhoneNumber) {
       setMessage({ type: 'error', text: 'Please enter a phone number to test.' });
       return;
@@ -79,8 +79,30 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
         cleanedConfig.accessToken = cleanedConfig.accessToken.replace(/^Bearer\s+/i, '').trim();
       }
 
-      await onTest({ provider: 'meta', config: cleanedConfig }, testPhoneNumber);
-      setMessage({ type: 'success', text: 'Test message sent successfully! Check your WhatsApp.' });
+      // Create config with appropriate template name for testing
+      const testConfig = {
+        ...cleanedConfig,
+        templateName: templateType === 'hello_world' ? 'hello_world' : cleanedConfig.templateName,
+      };
+
+      const response = await fetch('/api/settings/test-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'whatsapp',
+          config: { provider: 'meta', config: testConfig },
+          phoneNumber: testPhoneNumber,
+          templateType,
+        }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.details || 'Failed to send test message');
+      }
+
+      const templateName = templateType === 'hello_world' ? 'Hello World' : 'Invoice Generation';
+      setMessage({ type: 'success', text: `${templateName} test message sent successfully! Check your WhatsApp.` });
     } catch (error: any) {
       setMessage({ type: 'error', text: error.message || 'Failed to send test message.' });
     } finally {
@@ -179,13 +201,18 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
           <Input
             id="templateName"
             type="text"
-            placeholder="invoice_notification"
+            placeholder="invoice_generation"
             value={config.templateName || ''}
             onChange={(e) => setConfig({ ...config, templateName: e.target.value })}
           />
           <p className="text-sm text-muted-foreground">
-            Name of your approved WhatsApp message template for invoice notifications
+            Name of your approved WhatsApp message template (e.g., invoice_generation)
           </p>
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-2">
+            <p className="text-xs text-yellow-800">
+              <span className="font-semibold">⏳ Template Under Review?</span> You can save this name now. Use "Test Hello World" button to verify connection while waiting for approval.
+            </p>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -226,15 +253,24 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
         <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <h4 className="font-semibold text-yellow-900 mb-2">Important: Template Requirements</h4>
           <div className="space-y-2 text-sm text-yellow-800">
-            <p>Your WhatsApp message template must include these body parameters in order:</p>
+            <p className="font-medium">Header (with 1 parameter):</p>
+            <p className="mb-2">New Invoice from {'{{1}}'} (Business Name)</p>
+            
+            <p className="font-medium mt-3">Body (with 4 parameters in order):</p>
             <ul className="list-disc list-inside ml-2 space-y-1">
               <li><code className="bg-yellow-100 px-1 rounded">{'{{1}}'}</code> - Customer Name</li>
               <li><code className="bg-yellow-100 px-1 rounded">{'{{2}}'}</code> - Invoice Number</li>
               <li><code className="bg-yellow-100 px-1 rounded">{'{{3}}'}</code> - Amount</li>
               <li><code className="bg-yellow-100 px-1 rounded">{'{{4}}'}</code> - Due Date</li>
             </ul>
-            <p className="mt-2">
-              Example template body: "Hi {'{{1}}'}, your invoice {'{{2}}'} for {'{{3}}'} is ready. Due date: {'{{4}}'}."
+            
+            <p className="font-medium mt-3">Button:</p>
+            <p>Type: Call to Action - Visit Website</p>
+            <p>Text: "Pay Now"</p>
+            <p>URL: https://munshiji.pk/payment/{'{{1}}'} (Invoice ID)</p>
+            
+            <p className="mt-2 text-xs">
+              Example body: "Hi {'{{1}}'}, your invoice {'{{2}}'} for {'{{3}}'} has been generated. Due Date: {'{{4}}'}"
             </p>
           </div>
         </div>
@@ -254,17 +290,52 @@ export function WhatsAppSettingsForm({ initialSettings, onSave, onTest }: WhatsA
             </p>
           </div>
 
-          <div className="flex gap-4">
-            <Button onClick={handleSave} disabled={saving || testing || !isConfigComplete()}>
-              {saving ? 'Saving...' : 'Save Settings'}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleTest} 
-              disabled={saving || testing || !isConfigComplete() || !testPhoneNumber}
-            >
-              {testing ? 'Testing...' : 'Send Test Message'}
-            </Button>
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <Button onClick={handleSave} disabled={saving || testing || !isConfigComplete()}>
+                {saving ? 'Saving...' : 'Save Settings'}
+              </Button>
+            </div>
+            
+            <div className="border-t pt-4">
+              <h4 className="text-sm font-semibold mb-3">Test Messages</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleTest('hello_world')} 
+                  disabled={saving || testing || !config.accessToken || !config.phoneNumberId || !testPhoneNumber}
+                  className="w-full"
+                >
+                  {testing ? 'Testing...' : 'Test Hello World'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleTest('invoice')} 
+                  disabled={saving || testing || !isConfigComplete() || !testPhoneNumber}
+                  className="w-full"
+                >
+                  {testing ? 'Testing...' : 'Test Invoice Template'}
+                </Button>
+              </div>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-2">
+                <p className="text-xs text-blue-800">
+                  <span className="font-semibold">💡 Testing Guide:</span>
+                </p>
+                <ul className="text-xs text-blue-700 mt-1 space-y-1 ml-4 list-disc">
+                  <li><span className="font-medium">Hello World:</span> Always works - tests basic connection using Meta's default template (no parameters needed)</li>
+                  <li><span className="font-medium">Invoice Template:</span> Only works after your <code className="bg-blue-100 px-1 rounded">invoice_generation</code> template is approved - tests with dummy data:
+                    <ul className="mt-1 ml-4 list-circle space-y-0.5">
+                      <li>Business: MunshiJee</li>
+                      <li>Customer: Rana Waqas</li>
+                      <li>Invoice: INV-0001</li>
+                      <li>Amount: Rs.1000</li>
+                      <li>Due Date: 30 days from now</li>
+                      <li>Pay Now button included</li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
 

@@ -16,11 +16,12 @@ export interface WhatsAppConfig {
 
 export interface WhatsAppMessagePayload {
   to: string;
+  businessName: string;
   customerName: string;
   invoiceNumber: string;
   amount: string;
   dueDate: string;
-  pdfDownloadUrl?: string;
+  paymentUrl?: string;
 }
 
 export class WhatsAppService {
@@ -41,6 +42,15 @@ export class WhatsAppService {
     const phoneNumber = this.formatPhoneNumber(payload.to);
 
     const components: any[] = [
+      {
+        type: 'header',
+        parameters: [
+          {
+            type: 'text',
+            text: payload.businessName,
+          },
+        ],
+      },
       {
         type: 'body',
         parameters: [
@@ -64,7 +74,7 @@ export class WhatsAppService {
       },
     ];
 
-    if (payload.pdfDownloadUrl) {
+    if (payload.paymentUrl) {
       components.push({
         type: 'button',
         sub_type: 'url',
@@ -72,7 +82,7 @@ export class WhatsAppService {
         parameters: [
           {
             type: 'text',
-            text: payload.pdfDownloadUrl,
+            text: payload.paymentUrl,
           },
         ],
       });

@@ -13,6 +13,8 @@ import {
   Settings,
   LogOut,
   X,
+  Bell,
+  FileCheck,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +34,16 @@ const menuItems = [
     title: "Subscriptions",
     icon: CreditCard,
     href: "/admin/subscriptions",
+  },
+  {
+    title: "Notifications",
+    icon: Bell,
+    href: "/admin/notifications",
+  },
+  {
+    title: "Logs",
+    icon: FileCheck,
+    href: "/logs",
   },
   {
     title: "Settings",

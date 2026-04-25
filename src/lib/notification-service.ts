@@ -75,12 +75,7 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
         activeSubscription.id
       );
     } else if (invoice.user.emailNotificationsEnabled && activeSubscription.emailsUsed >= activeSubscription.plan.emailLimit) {
-      console.warn(`User ${invoice.userId} has reached email quota limit. Auto-disabling email notifications.`);
-      
-      await prisma.user.update({
-        where: { id: invoice.userId },
-        data: { emailNotificationsEnabled: false },
-      });
+      console.warn(`User ${invoice.userId} has reached email quota limit (${activeSubscription.emailsUsed}/${activeSubscription.plan.emailLimit}). Email notification skipped.`);
     }
 
     if (
@@ -97,12 +92,7 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
         activeSubscription.id
       );
     } else if (invoice.user.smsNotificationsEnabled && activeSubscription.smsUsed >= activeSubscription.plan.smsLimit) {
-      console.warn(`User ${invoice.userId} has reached SMS quota limit. Auto-disabling SMS notifications.`);
-      
-      await prisma.user.update({
-        where: { id: invoice.userId },
-        data: { smsNotificationsEnabled: false },
-      });
+      console.warn(`User ${invoice.userId} has reached SMS quota limit (${activeSubscription.smsUsed}/${activeSubscription.plan.smsLimit}). SMS notification skipped.`);
     }
 
     if (
@@ -116,16 +106,20 @@ export async function sendInvoiceNotification(invoiceId: string): Promise<void> 
         invoice.customer.phone,
         whatsappSettings,
         invoiceData,
-        invoice.user.name,
+        invoice.user.name || 'MunshiJee',
         activeSubscription.id
       );
-    } else if (invoice.user.whatsappNotificationsEnabled && activeSubscription.whatsappUsed >= activeSubscription.plan.whatsappLimit) {
-      console.warn(`User ${invoice.userId} has reached WhatsApp quota limit. Auto-disabling WhatsApp notifications.`);
-      
-      await prisma.user.update({
-        where: { id: invoice.userId },
-        data: { whatsappNotificationsEnabled: false },
-      });
+    } else {
+      // Log why WhatsApp notification was skipped
+      if (!invoice.user.whatsappNotificationsEnabled) {
+        console.log(`WhatsApp notifications disabled for user ${invoice.userId}`);
+      } else if (!whatsappSettings) {
+        console.warn(`WhatsApp settings not configured for user ${invoice.userId}`);
+      } else if (!invoice.customer.phone) {
+        console.warn(`Customer ${invoice.customer.id} has no phone number for WhatsApp`);
+      } else if (activeSubscription.whatsappUsed >= activeSubscription.plan.whatsappLimit) {
+        console.warn(`User ${invoice.userId} has reached WhatsApp quota limit (${activeSubscription.whatsappUsed}/${activeSubscription.plan.whatsappLimit}). WhatsApp notification skipped.`);
+      }
     }
   } catch (error) {
     console.error('Error sending invoice notification:', error);
@@ -336,6 +330,8 @@ async function sendWhatsAppNotification(
   });
 
   try {
+    console.log(`Attempting to send WhatsApp for invoice ${invoiceId} to ${recipientPhone}`);
+    
     const whatsappService = new WhatsAppService(whatsappSettings);
     
     await whatsappService.send({
@@ -348,6 +344,7 @@ async function sendWhatsAppNotification(
       paymentUrl: invoiceId,
     });
 
+    console.log(`WhatsApp sent successfully for invoice ${invoiceId}`);
     await updateNotificationLog(logId, 'SENT', null);
     
     await prisma.userSubscription.update({
@@ -356,7 +353,12 @@ async function sendWhatsAppNotification(
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error(`Failed to send WhatsApp for invoice ${invoiceId}:`, {
+      error: errorMessage,
+      recipient: recipientPhone,
+      provider: whatsappSettings.provider,
+      templateName: whatsappSettings.config.templateName,
+    });
     await updateNotificationLog(logId, 'FAILED', errorMessage);
-    console.error('Failed to send WhatsApp notification:', error);
   }
 }

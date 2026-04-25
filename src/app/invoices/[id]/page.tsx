@@ -14,7 +14,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Download, Trash2, CheckCircle } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ArrowLeft, Download, Trash2, CheckCircle, Send } from "lucide-react";
 import { formatCurrency, formatDate, formatInvoiceType, formatPaymentMethod } from "@/lib/utils";
 import { MarkPaidSheet } from "@/components/invoices/mark-paid-sheet";
 
@@ -29,6 +37,8 @@ export default function InvoiceDetailPage() {
   const [error, setError] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [markPaidSheetOpen, setMarkPaidSheetOpen] = useState(false);
+  const [resendDialogOpen, setResendDialogOpen] = useState(false);
+  const [resending, setResending] = useState(false);
 
   useEffect(() => {
     fetchInvoice();
@@ -101,6 +111,29 @@ export default function InvoiceDetailPage() {
     fetchInvoice();
   };
 
+  const handleResendInvoice = async () => {
+    setResending(true);
+    try {
+      const response = await fetch(`/api/invoices/${invoiceId}/resend`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to resend invoice");
+      }
+
+      alert("Invoice notifications have been resent successfully!");
+      setResendDialogOpen(false);
+    } catch (error: any) {
+      console.error("Error resending invoice:", error);
+      alert(error.message || "Failed to resend invoice");
+    } finally {
+      setResending(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -157,6 +190,13 @@ export default function InvoiceDetailPage() {
           <Button variant="outline" onClick={handleDownloadPDF}>
             <Download className="mr-2 h-4 w-4" />
             Download PDF
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setResendDialogOpen(true)}
+          >
+            <Send className="mr-2 h-4 w-4" />
+            Resend
           </Button>
           {session?.user?.role === "SUPER_ADMIN" && invoice.status !== "PAID" && (
             <Button
@@ -394,6 +434,38 @@ export default function InvoiceDetailPage() {
           onSuccess={handleMarkPaidSuccess}
         />
       )}
+
+      <Dialog open={resendDialogOpen} onOpenChange={setResendDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Resend Invoice Notifications</DialogTitle>
+            <DialogDescription>
+              This will resend invoice notifications (Email, SMS, WhatsApp) to the customer{" "}
+              <strong>{invoice.customer.name}</strong> for invoice{" "}
+              <strong>{invoice.invoiceNumber}</strong>.
+              <br />
+              <br />
+              Are you sure you want to continue?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setResendDialogOpen(false)}
+              disabled={resending}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleResendInvoice}
+              disabled={resending}
+            >
+              <Send className="mr-2 h-4 w-4" />
+              {resending ? "Sending..." : "Resend Invoice"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

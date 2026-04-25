@@ -176,22 +176,15 @@ export default function SettingsPage() {
       return;
     }
 
+    // Warning messages for quota limits (but don't prevent enabling)
+    let warningMessages = [];
+    
     if (emailEnabled && subscription.emailsUsed >= subscription.plan.emailLimit) {
-      setMessage({ 
-        type: 'error', 
-        text: 'You have reached your email quota limit. Please upgrade your subscription or wait for the next billing cycle.' 
-      });
-      setEmailEnabled(false);
-      return;
+      warningMessages.push('Email quota reached - new emails will not be sent until quota resets or you upgrade.');
     }
 
     if (whatsappEnabled && subscription.whatsappUsed >= subscription.plan.whatsappLimit) {
-      setMessage({ 
-        type: 'error', 
-        text: 'You have reached your WhatsApp quota limit. Please upgrade your subscription or wait for the next billing cycle.' 
-      });
-      setWhatsappEnabled(false);
-      return;
+      warningMessages.push('WhatsApp quota reached - new WhatsApp messages will not be sent until quota resets or you upgrade.');
     }
 
     setSaving(true);
@@ -211,7 +204,14 @@ export default function SettingsPage() {
         throw new Error('Failed to save notification settings');
       }
 
-      setMessage({ type: 'success', text: 'Notification settings saved successfully!' });
+      if (warningMessages.length > 0) {
+        setMessage({ 
+          type: 'success', 
+          text: `Settings saved! Note: ${warningMessages.join(' ')}` 
+        });
+      } else {
+        setMessage({ type: 'success', text: 'Notification settings saved successfully!' });
+      }
     } catch (error) {
       setMessage({ type: 'error', text: 'Failed to save settings. Please try again.' });
     } finally {
@@ -722,9 +722,19 @@ export default function SettingsPage() {
                 )}
 
                 {subscription.emailsUsed >= subscription.plan.emailLimit && (
-                  <Alert variant="destructive">
+                  <Alert>
+                    <Info className="h-4 w-4" />
                     <AlertDescription>
-                      You have reached your email quota limit. Upgrade your plan or wait for the next billing cycle.
+                      Email quota limit reached. You can still enable email notifications, but new emails won't be sent until your quota resets or you upgrade your plan.
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {subscription.whatsappUsed >= subscription.plan.whatsappLimit && subscription.plan.whatsappLimit > 0 && (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertDescription>
+                      WhatsApp quota limit reached. You can still enable WhatsApp notifications, but new messages won't be sent until your quota resets or you upgrade your plan.
                     </AlertDescription>
                   </Alert>
                 )}

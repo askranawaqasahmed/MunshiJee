@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import { Prisma, type AuditAction } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+
+type AuditAction = "USER_DISABLED" | "USER_ENABLED" | "USER_DELETED" | "SUBSCRIPTION_ASSIGNED" | "SUBSCRIPTION_CHANGED";
 
 export interface RecordAuditArgs {
   actorId: string;

@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { format } from "date-fns";
-import type { AuditAction } from "@prisma/client";
+type AuditAction = "USER_DISABLED" | "USER_ENABLED" | "USER_DELETED" | "SUBSCRIPTION_ASSIGNED" | "SUBSCRIPTION_CHANGED";
 
 const PAGE_SIZE = 50;
 

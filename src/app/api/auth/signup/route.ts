@@ -4,33 +4,7 @@ import * as bcrypt from "bcryptjs";
 import { signupSchema } from "@/lib/validators";
 import { getWelcomeEmailTemplate } from "@/lib/email-templates";
 import { EmailService } from "@/lib/email-service";
-
-import type { EmailConfig } from "@/lib/email-service";
-
-async function getSuperAdminEmailSettings(): Promise<EmailConfig | null> {
-  try {
-    const [providerSetting, configSetting] = await Promise.all([
-      prisma.settings.findFirst({
-        where: { key: "email_provider", userId: null },
-      }),
-      prisma.settings.findFirst({
-        where: { key: "email_config", userId: null },
-      }),
-    ]);
-
-    if (!providerSetting || !configSetting) {
-      return null;
-    }
-
-    return {
-      provider: providerSetting.value as "resend",
-      config: configSetting.value as any,
-    };
-  } catch (error) {
-    console.error("Error fetching super admin email settings:", error);
-    return null;
-  }
-}
+import { getSuperAdminEmailSettings } from "@/lib/super-admin-email";
 
 export async function POST(req: Request) {
   try {
@@ -61,7 +35,7 @@ export async function POST(req: Request) {
         email: validatedData.email,
         phoneNumber: validatedData.phoneNumber,
         password: hashedPassword,
-        role: "USER",
+        role: "ADMIN",
       },
     });
 

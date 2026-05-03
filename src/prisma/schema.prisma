@@ -9,7 +9,15 @@ datasource db {
 
 enum Role {
   SUPER_ADMIN
-  USER
+  ADMIN
+}
+
+enum AuditAction {
+  USER_DISABLED
+  USER_ENABLED
+  USER_DELETED
+  SUBSCRIPTION_ASSIGNED
+  SUBSCRIPTION_CHANGED
 }
 
 enum InvoiceType {
@@ -87,7 +95,8 @@ model User {
   name        String
   password    String
   phoneNumber String?
-  role        Role     @default(USER)
+  role        Role     @default(ADMIN)
+  isActive    Boolean  @default(true)
   emailNotificationsEnabled    Boolean @default(true)
   smsNotificationsEnabled      Boolean @default(false)
   whatsappNotificationsEnabled Boolean @default(false)
@@ -104,6 +113,7 @@ model User {
 
   @@index([email])
   @@index([role])
+  @@index([isActive])
 }
 
 model Customer {
@@ -312,4 +322,20 @@ model EasypaisaTransaction {
   @@index([customerId])
   @@index([status])
   @@index([orderId])
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  actorId     String
+  actorEmail  String
+  targetId    String?
+  targetEmail String?
+  action      AuditAction
+  metadata    Json?
+  createdAt   DateTime    @default(now())
+
+  @@index([actorId])
+  @@index([targetId])
+  @@index([action])
+  @@index([createdAt])
 }

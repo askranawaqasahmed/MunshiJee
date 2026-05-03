@@ -15,6 +15,7 @@ import {
   X,
   Bell,
   FileCheck,
+  History,
 } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,11 @@ const menuItems = [
     title: "Notifications",
     icon: Bell,
     href: "/admin/notifications",
+  },
+  {
+    title: "Audit Log",
+    icon: History,
+    href: "/admin/audit-log",
   },
   {
     title: "Logs",

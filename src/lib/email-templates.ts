@@ -402,3 +402,65 @@ export function getWelcomeEmailTemplate(data: WelcomeEmailData): string {
 </html>
   `.trim();
 }
+
+export interface PlanChangedEmailData {
+  name: string;
+  planName: string;
+  emailLimit: number;
+  smsLimit: number;
+  whatsappLimit: number;
+  endDate: string;
+  isUpgrade: boolean;
+}
+
+export function getPlanChangedEmailTemplate(data: PlanChangedEmailData): string {
+  const headline = data.isUpgrade
+    ? `Welcome to ${data.planName}!`
+    : `Your plan has been updated to ${data.planName}`;
+  const body = data.isUpgrade
+    ? `Great news! A super admin has activated the <strong>${data.planName}</strong> plan on your MunshiJee account. You now have higher limits to send invoices and notifications.`
+    : `A super admin has updated your MunshiJee subscription to the <strong>${data.planName}</strong> plan. Your new limits are shown below.`;
+
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${headline}</title>
+  <style>
+    body { margin:0; padding:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background:#f4f4f4; line-height:1.6; }
+    .email-container { max-width:600px; margin:20px auto; background:#ffffff; border-radius:8px; overflow:hidden; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+    .header { background: linear-gradient(135deg,#3b82f6 0%,#1e40af 100%); padding:40px 30px; text-align:center; color:#ffffff; }
+    .header h1 { margin:0; font-size:26px; font-weight:600; }
+    .content { padding:30px; color:#333; font-size:15px; }
+    .plan-card { background:#f8f9fa; border-radius:6px; padding:20px; margin:25px 0; }
+    .row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid #e9ecef; }
+    .row:last-child { border-bottom:none; }
+    .label { color:#6c757d; }
+    .value { font-weight:600; color:#212529; }
+    .footer { background:#212529; padding:20px; text-align:center; color:#adb5bd; font-size:13px; }
+  </style>
+</head>
+<body>
+  <div class="email-container">
+    <div class="header"><h1>${headline}</h1></div>
+    <div class="content">
+      <p>Hi ${data.name},</p>
+      <p>${body}</p>
+      <div class="plan-card">
+        <div class="row"><span class="label">Plan</span><span class="value">${data.planName}</span></div>
+        <div class="row"><span class="label">Email limit</span><span class="value">${data.emailLimit.toLocaleString()}</span></div>
+        <div class="row"><span class="label">SMS limit</span><span class="value">${data.smsLimit.toLocaleString()}</span></div>
+        <div class="row"><span class="label">WhatsApp limit</span><span class="value">${data.whatsappLimit.toLocaleString()}</span></div>
+        <div class="row"><span class="label">Valid until</span><span class="value">${data.endDate}</span></div>
+      </div>
+      <p>Log in to your dashboard to start using your new limits.</p>
+    </div>
+    <div class="footer">
+      <p>MunshiJee &mdash; Professional Invoice Management</p>
+    </div>
+  </div>
+</body>
+</html>
+  `.trim();
+}

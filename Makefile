@@ -1,7 +1,7 @@
 # MunshiJee - Makefile
 # Quick commands for building and development
 
-.PHONY: help install build dev clean db-generate lint deploy-package
+.PHONY: help install build dev clean db-generate db-seed lint deploy-package
 
 # Default target - show help
 help:
@@ -17,6 +17,7 @@ help:
 	@echo ""
 	@echo "Database:"
 	@echo "  make db-generate    - Generate Prisma client"
+	@echo "  make db-seed        - Seed database (plans + super admin)"
 	@echo ""
 	@echo "Maintenance:"
 	@echo "  make clean          - Clean build files"
@@ -35,6 +36,13 @@ db-generate:
 	@echo "Generating Prisma client..."
 	npm run db:generate
 	@echo "✓ Prisma client generated"
+	@echo ""
+
+# Seed database (subscription plans + super admin user)
+db-seed:
+	@echo "Seeding database..."
+	npm run db:seed
+	@echo "✓ Database seeded"
 	@echo ""
 
 # Build for production

@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { ArrowLeft, Mail, Phone, Calendar, DollarSign, FileText, Users, TrendingUp } from "lucide-react";
 import { SubscriptionManager } from "@/components/users/subscription-manager";
+import { AccountActions } from "@/components/users/account-actions";
+import { Badge } from "@/components/ui/badge";
 
 export default async function UserDetailPage({
   params,
@@ -35,7 +37,7 @@ export default async function UserDetailPage({
     },
   });
 
-  if (!user || user.role !== "USER") {
+  if (!user || user.role !== "ADMIN") {
     notFound();
   }
 
@@ -110,10 +112,22 @@ export default async function UserDetailPage({
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">{user.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">{user.name}</h1>
+              {user.isActive ? (
+                <Badge className="bg-green-600 hover:bg-green-700">Active</Badge>
+              ) : (
+                <Badge variant="destructive">Disabled</Badge>
+              )}
+            </div>
             <p className="text-gray-600 mt-1">User Details & Activity</p>
           </div>
         </div>
+        <AccountActions
+          userId={user.id}
+          userEmail={user.email}
+          isActive={user.isActive}
+        />
       </div>
 
       {/* User Info Card */}
@@ -150,7 +164,9 @@ export default async function UserDetailPage({
               <Users className="h-5 w-5 text-gray-400" />
               <div>
                 <p className="text-sm text-gray-500">Status</p>
-                <p className="font-medium text-green-600">Active</p>
+                <p className={`font-medium ${user.isActive ? "text-green-600" : "text-red-600"}`}>
+                  {user.isActive ? "Active" : "Disabled"}
+                </p>
               </div>
             </div>
           </div>

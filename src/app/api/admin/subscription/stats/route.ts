@@ -18,7 +18,7 @@ export async function GET() {
           plan: true,
         },
       }),
-      prisma.user.count({ where: { role: 'USER' } }),
+      prisma.user.count({ where: { role: 'ADMIN' } }),
     ]);
 
     const totalRevenue = activeSubscriptions.reduce((sum, sub) => {

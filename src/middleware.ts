@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getToken } from "next-auth/jwt";
 import type { NextRequest } from "next/server";
 
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
+
 export async function middleware(request: NextRequest) {
   const token = await getToken({
     req: request,
@@ -10,9 +12,9 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
-  // Allow access to login and signup pages without authentication
-  if (pathname === "/login" || pathname === "/signup") {
-    if (token) {
+  // Public marketing/auth pages
+  if (PUBLIC_PATHS.has(pathname)) {
+    if (token && (pathname === "/login" || pathname === "/signup")) {
       const dashboardUrl = new URL("/dashboard", request.url);
       return NextResponse.redirect(dashboardUrl);
     }
@@ -26,10 +28,18 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  const role = token.role as string;
+  // Account disabled — kick to login
+  if (token.isActive === false) {
+    const loginUrl = new URL("/login", request.url);
+    loginUrl.searchParams.set("disabled", "true");
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete("next-auth.session-token");
+    response.cookies.delete("__Secure-next-auth.session-token");
+    return response;
+  }
 
-  // Check token expiration
-  if (token.exp && typeof token.exp === 'number' && Date.now() >= token.exp * 1000) {
+  // Token expiration
+  if (token.exp && typeof token.exp === "number" && Date.now() >= token.exp * 1000) {
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("expired", "true");
     const response = NextResponse.redirect(loginUrl);
@@ -38,6 +48,8 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  const role = token.role as string;
+
   // Super admin only routes
   if (pathname.startsWith("/users") || pathname.startsWith("/admin")) {
     if (role !== "SUPER_ADMIN") {
@@ -45,10 +57,6 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // Allow authenticated users to access their own data
-  // invoices, customers, sales, payments, settings are accessible to all authenticated users
-  // Dashboard is accessible to all authenticated users
-  
   return NextResponse.next();
 }
 

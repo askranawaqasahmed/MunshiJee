@@ -15,12 +15,12 @@ export default async function SuperAdminDashboard() {
 
   // Get user statistics
   const totalUsers = await prisma.user.count({
-    where: { role: "USER" },
+    where: { role: "ADMIN" },
   });
 
   const newUsersLast7Days = await prisma.user.count({
     where: {
-      role: "USER",
+      role: "ADMIN",
       createdAt: {
         gte: subDays(new Date(), 7),
       },
@@ -29,7 +29,7 @@ export default async function SuperAdminDashboard() {
 
   const newUsersLast30Days = await prisma.user.count({
     where: {
-      role: "USER",
+      role: "ADMIN",
       createdAt: {
         gte: subDays(new Date(), 30),
       },
@@ -72,7 +72,7 @@ export default async function SuperAdminDashboard() {
 
   // Recent user signups
   const recentUsers = await prisma.user.findMany({
-    where: { role: "USER" },
+    where: { role: "ADMIN" },
     orderBy: { createdAt: "desc" },
     take: 5,
     select: {

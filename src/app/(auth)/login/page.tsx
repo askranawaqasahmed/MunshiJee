@@ -24,9 +24,10 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if session expired
     if (searchParams.get("expired") === "true") {
       setError("Your session has expired. Please log in again.");
+    } else if (searchParams.get("disabled") === "true") {
+      setError("Your account has been disabled. Please contact support.");
     }
   }, [searchParams]);
 

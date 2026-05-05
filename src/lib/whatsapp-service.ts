@@ -107,7 +107,7 @@ export class WhatsAppService {
       console.log('Meta WhatsApp API request:', {
         url,
         phoneNumber,
-        templateName: config.templateName,
+        templateName: templateName || config.invoiceTemplateName,
       });
 
       const response = await fetch(url, {

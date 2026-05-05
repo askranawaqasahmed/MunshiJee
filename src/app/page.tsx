@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,7 +13,6 @@ import {
   BarChart3,
   Check,
   ArrowRight,
-  Receipt,
   Sparkles,
 } from "lucide-react";
 
@@ -128,7 +128,14 @@ export default async function LandingPage() {
       <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-2">
-            <Receipt className="h-6 w-6 text-primary" />
+            <Image
+              src="/logo-mark.png"
+              alt="MunshiJee"
+              width={32}
+              height={32}
+              priority
+              className="h-8 w-8"
+            />
             <span className="text-xl font-bold">MunshiJee</span>
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
@@ -387,7 +394,13 @@ export default async function LandingPage() {
       <footer className="border-t bg-white py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 md:flex-row">
           <div className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-primary" />
+            <Image
+              src="/logo-mark.png"
+              alt="MunshiJee"
+              width={24}
+              height={24}
+              className="h-6 w-6"
+            />
             <span className="font-semibold">MunshiJee</span>
             <span className="text-sm text-gray-500">
               © {new Date().getFullYear()}

@@ -86,8 +86,8 @@ async function main() {
     console.log(`Created/updated plan: ${plan.name}`);
   }
 
-  const adminEmail = process.env.ADMIN_EMAIL || "superadmin@munshijee.ideageek.pk";
-  const adminPassword = process.env.ADMIN_PASSWORD || "admin123!@#";
+  const adminEmail = process.env.ADMIN_EMAIL || "superadmin@ideageek.pk";
+  const adminPassword = process.env.ADMIN_PASSWORD || "Ideageek123!@#";
 
   const existingAdmin = await prisma.user.findUnique({
     where: { email: adminEmail },

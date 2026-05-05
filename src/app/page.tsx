@@ -393,7 +393,7 @@ export default async function LandingPage() {
               © {new Date().getFullYear()}
             </span>
           </div>
-          <div className="flex items-center gap-6 text-sm text-gray-600">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-600">
             <Link href="/login" className="hover:text-gray-900">
               Log in
             </Link>
@@ -406,6 +406,12 @@ export default async function LandingPage() {
             <a href="#pricing" className="hover:text-gray-900">
               Pricing
             </a>
+            <Link href="/privacy" className="hover:text-gray-900">
+              Privacy Policy
+            </Link>
+            <Link href="/terms" className="hover:text-gray-900">
+              Terms of Service
+            </Link>
           </div>
         </div>
       </footer>

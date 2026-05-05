@@ -1,2 +1,2 @@
 [deploy]
-startCommand = "prisma migrate deploy --schema=./src/prisma/schema.prisma && next start"
+startCommand = "prisma migrate deploy --schema=./src/prisma/schema.prisma && prisma db seed --schema=./src/prisma/schema.prisma && next start"

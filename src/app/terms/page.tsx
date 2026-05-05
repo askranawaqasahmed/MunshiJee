@@ -225,6 +225,9 @@ export default function TermsOfServicePage() {
             <Link href="/terms" className="hover:text-gray-900">
               Terms of Service
             </Link>
+            <Link href="/data-deletion" className="hover:text-gray-900">
+              Data Deletion
+            </Link>
           </div>
         </div>
       </footer>

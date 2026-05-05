@@ -16,16 +16,15 @@ export default function DataDeletionPage() {
       {/* Top nav */}
       <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link href="/" className="flex items-center gap-2">
+          <Link href="/" className="flex items-center">
             <Image
               src="/logo-mark.png"
               alt="MunshiJee"
-              width={32}
-              height={32}
+              width={400}
+              height={160}
               priority
-              className="h-8 w-8"
+              className="h-12 w-auto"
             />
-            <span className="text-xl font-bold">MunshiJee</span>
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
             <Link href="/#features" className="text-sm text-gray-600 hover:text-gray-900">
@@ -168,15 +167,14 @@ export default function DataDeletionPage() {
 
       <footer className="border-t bg-white py-10">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 md:flex-row">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <Image
               src="/logo-mark.png"
               alt="MunshiJee"
-              width={24}
-              height={24}
-              className="h-6 w-6"
+              width={300}
+              height={120}
+              className="h-9 w-auto"
             />
-            <span className="font-semibold">MunshiJee</span>
             <span className="text-sm text-gray-500">
               © {new Date().getFullYear()}
             </span>

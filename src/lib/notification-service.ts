@@ -357,7 +357,7 @@ async function sendWhatsAppNotification(
       error: errorMessage,
       recipient: recipientPhone,
       provider: whatsappSettings.provider,
-      templateName: whatsappSettings.config.templateName,
+      templateName: whatsappSettings.config.invoiceTemplateName,
     });
     await updateNotificationLog(logId, 'FAILED', errorMessage);
   }

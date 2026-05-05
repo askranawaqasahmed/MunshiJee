@@ -5,8 +5,8 @@ export interface MetaConfig {
   phoneNumberId: string;
   wabaId?: string;
   apiVersion?: string;
-  templateName: string;
-  templateLanguage?: string;
+  invoiceTemplateName?: string;
+  paymentTemplateName?: string;
 }
 
 export interface WhatsAppConfig {
@@ -27,17 +27,17 @@ export interface WhatsAppMessagePayload {
 export class WhatsAppService {
   constructor(private whatsappConfig: WhatsAppConfig) {}
 
-  async send(payload: WhatsAppMessagePayload): Promise<void> {
+  async send(payload: WhatsAppMessagePayload, templateName?: string): Promise<void> {
     if (this.whatsappConfig.provider !== 'meta') {
       throw new Error(`Unsupported WhatsApp provider: ${this.whatsappConfig.provider}`);
     }
-    return this.sendWithMeta(payload);
+    return this.sendWithMeta(payload, templateName);
   }
 
-  private async sendWithMeta(payload: WhatsAppMessagePayload): Promise<void> {
+  private async sendWithMeta(payload: WhatsAppMessagePayload, templateName?: string): Promise<void> {
     const config = this.whatsappConfig.config;
     const apiVersion = config.apiVersion || 'v20.0';
-    const templateLanguage = config.templateLanguage || 'en_US';
+    const templateLanguage = 'en_US';
 
     const phoneNumber = this.formatPhoneNumber(payload.to);
 
@@ -93,7 +93,7 @@ export class WhatsAppService {
       to: phoneNumber,
       type: 'template',
       template: {
-        name: config.templateName,
+        name: templateName || config.invoiceTemplateName || 'invoice_generation',
         language: {
           code: templateLanguage,
         },

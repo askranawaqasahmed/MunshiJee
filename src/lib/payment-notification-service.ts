@@ -95,26 +95,16 @@ async function sendWhatsAppPaymentConfirmation(
   });
 
   try {
-    // Check if payment_confirmation template is configured
-    const templateName = whatsappSettings.config.templateName;
-    const hasPaymentTemplate = templateName === 'payment_confirmation' || 
-                               whatsappSettings.config.paymentTemplateName;
-
-    if (!hasPaymentTemplate) {
+    const paymentTemplateName = whatsappSettings.config.paymentTemplateName;
+    if (!paymentTemplateName) {
       console.log('Payment confirmation template not configured, skipping WhatsApp notification');
       await updatePaymentNotificationLog(logId, 'FAILED', 'Payment confirmation template not configured');
       return;
     }
 
-    // Use payment_confirmation template
-    const paymentConfig = {
-      ...whatsappSettings.config,
-      templateName: whatsappSettings.config.paymentTemplateName || 'payment_confirmation',
-    };
-
     const whatsappService = new WhatsAppService({
       provider: 'meta',
-      config: paymentConfig,
+      config: whatsappSettings.config,
     });
 
     const paymentDate = format(new Date(payment.paymentDate), 'dd/MM/yyyy');
@@ -125,9 +115,9 @@ async function sendWhatsAppPaymentConfirmation(
       customerName: payment.invoice.customer.name,
       invoiceNumber: payment.invoice.invoiceNumber,
       amount: `Rs.${Number(payment.amount).toFixed(0)}`,
-      dueDate: paymentDate, // Using dueDate parameter for payment date
-      paymentUrl: payment.invoiceId, // Link to receipt/invoice page
-    });
+      dueDate: paymentDate,
+      paymentUrl: payment.invoiceId,
+    }, paymentTemplateName);
 
     await updatePaymentNotificationLog(logId, 'SENT', null);
 

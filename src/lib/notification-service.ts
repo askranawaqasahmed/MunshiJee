@@ -342,7 +342,7 @@ async function sendWhatsAppNotification(
       amount: invoiceData.amount,
       dueDate: invoiceData.dueDate,
       paymentUrl: invoiceId,
-    });
+    }, whatsappSettings.config.invoiceTemplateName);
 
     console.log(`WhatsApp sent successfully for invoice ${invoiceId}`);
     await updateNotificationLog(logId, 'SENT', null);

@@ -123,23 +123,10 @@ export async function POST(request: NextRequest) {
 
         console.log('WhatsApp hello_world sent:', responseData);
       } else {
-        // Test invoice_generation template with parameters
-        // Force use invoice_generation template for this test
-        const invoiceConfig = {
-          ...whatsappConfig.config,
-          templateName: 'invoice_generation',
-        };
-        
-        const whatsappService = new WhatsAppService({
-          provider: 'meta',
-          config: invoiceConfig,
-        });
-        
-        const today = new Date();
-        const dueDate = new Date(today);
+        const whatsappService = new WhatsAppService({ provider: 'meta', config: whatsappConfig.config });
+
+        const dueDate = new Date();
         dueDate.setDate(dueDate.getDate() + 30);
-        
-        // Format date as "10/02/2026" or "Dec 31, 2026"
         const formattedDate = `${dueDate.getDate().toString().padStart(2, '0')}/${(dueDate.getMonth() + 1).toString().padStart(2, '0')}/${dueDate.getFullYear()}`;
 
         await whatsappService.send({
@@ -150,7 +137,7 @@ export async function POST(request: NextRequest) {
           amount: 'Rs.1000',
           dueDate: formattedDate,
           paymentUrl: 'clxxx123456789test',
-        });
+        }, whatsappConfig.config.invoiceTemplateName);
       }
 
       return NextResponse.json({

@@ -14,8 +14,8 @@ interface WhatsAppSettings {
     phoneNumberId?: string;
     wabaId?: string;
     apiVersion?: string;
-    templateName?: string;
-    templateLanguage?: string;
+    invoiceTemplateName?: string;
+    paymentTemplateName?: string;
   };
 }
 
@@ -27,8 +27,8 @@ interface WhatsAppSettingsFormProps {
 export function WhatsAppSettingsForm({ initialSettings, onSave }: WhatsAppSettingsFormProps) {
   const [config, setConfig] = useState(initialSettings?.config || {
     apiVersion: 'v20.0',
-    templateLanguage: 'en_US',
-    templateName: 'invoice_generation',
+    invoiceTemplateName: 'invoice_generation',
+    paymentTemplateName: 'payment_confirmation',
   });
   const [testPhoneNumber, setTestPhoneNumber] = useState('923003487592');
   const [saving, setSaving] = useState(false);
@@ -40,7 +40,8 @@ export function WhatsAppSettingsForm({ initialSettings, onSave }: WhatsAppSettin
       setConfig({
         ...initialSettings.config,
         apiVersion: initialSettings.config.apiVersion || 'v20.0',
-        templateLanguage: initialSettings.config.templateLanguage || 'en_US',
+        invoiceTemplateName: initialSettings.config.invoiceTemplateName || 'invoice_generation',
+        paymentTemplateName: initialSettings.config.paymentTemplateName || 'payment_confirmation',
       });
     }
   }, [initialSettings]);
@@ -79,10 +80,9 @@ export function WhatsAppSettingsForm({ initialSettings, onSave }: WhatsAppSettin
         cleanedConfig.accessToken = cleanedConfig.accessToken.replace(/^Bearer\s+/i, '').trim();
       }
 
-      // Create config with appropriate template name for testing
       const testConfig = {
         ...cleanedConfig,
-        templateName: templateType === 'hello_world' ? 'hello_world' : cleanedConfig.templateName,
+        invoiceTemplateName: templateType === 'hello_world' ? 'hello_world' : cleanedConfig.invoiceTemplateName,
       };
 
       const response = await fetch('/api/settings/test-notification', {
@@ -111,7 +111,7 @@ export function WhatsAppSettingsForm({ initialSettings, onSave }: WhatsAppSettin
   };
 
   const isConfigComplete = () => {
-    return config.accessToken && config.phoneNumberId && config.templateName;
+    return config.accessToken && config.phoneNumberId && config.invoiceTemplateName;
   };
 
   return (
@@ -197,35 +197,30 @@ export function WhatsAppSettingsForm({ initialSettings, onSave }: WhatsAppSettin
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="templateName">Template Name *</Label>
+          <Label htmlFor="invoiceTemplateName">Invoice Template Name *</Label>
           <Input
-            id="templateName"
+            id="invoiceTemplateName"
             type="text"
             placeholder="invoice_generation"
-            value={config.templateName || ''}
-            onChange={(e) => setConfig({ ...config, templateName: e.target.value })}
+            value={config.invoiceTemplateName || ''}
+            onChange={(e) => setConfig({ ...config, invoiceTemplateName: e.target.value })}
           />
           <p className="text-sm text-muted-foreground">
-            Name of your approved WhatsApp message template (e.g., invoice_generation)
+            Name of your approved WhatsApp template for invoice notifications
           </p>
-          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-2">
-            <p className="text-xs text-yellow-800">
-              <span className="font-semibold">⏳ Template Under Review?</span> You can save this name now. Use "Test Hello World" button to verify connection while waiting for approval.
-            </p>
-          </div>
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="templateLanguage">Template Language</Label>
+          <Label htmlFor="paymentTemplateName">Payment Template Name</Label>
           <Input
-            id="templateLanguage"
+            id="paymentTemplateName"
             type="text"
-            placeholder="en_US"
-            value={config.templateLanguage || 'en_US'}
-            onChange={(e) => setConfig({ ...config, templateLanguage: e.target.value })}
+            placeholder="payment_confirmation"
+            value={config.paymentTemplateName || ''}
+            onChange={(e) => setConfig({ ...config, paymentTemplateName: e.target.value })}
           />
           <p className="text-sm text-muted-foreground">
-            Language code of your template (default: en_US)
+            Name of your approved WhatsApp template for payment confirmations
           </p>
         </div>
 

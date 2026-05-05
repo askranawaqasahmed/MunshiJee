@@ -23,7 +23,7 @@ export default function DataDeletionPage() {
               width={400}
               height={160}
               priority
-              className="h-12 w-auto"
+              className="h-16 w-auto"
             />
           </Link>
           <nav className="hidden items-center gap-6 md:flex">
@@ -173,7 +173,7 @@ export default function DataDeletionPage() {
               alt="MunshiJee"
               width={300}
               height={120}
-              className="h-9 w-auto"
+              className="h-12 w-auto"
             />
             <span className="text-sm text-gray-500">
               © {new Date().getFullYear()}
